@@ -25,6 +25,7 @@ var _ = Describe("Marshal", func() {
 			Entry("boolean", c{V: true}, `{"V":true}`),
 			Entry("int", c{V: 42}, `{"V":42}`),
 			Entry("float", c{V: 4.2}, `{"V":4.2}`),
+			Entry("struct", c{V: c{V: "hierarchical"}}, `{"V":{"V":"hierarchical"}}`),
 		)
 
 		DescribeTable(
