@@ -24,7 +24,7 @@ func Marshal(input interface{}) ([]byte, error) {
 		return nil, errors.New("the input must be a struct")
 	}
 
-	m, err := marshal(i)
+	m, err := marshal(context{}, i)
 	if err != nil {
 		return nil, err
 	}
@@ -32,27 +32,30 @@ func Marshal(input interface{}) ([]byte, error) {
 	return json.Marshal(m)
 }
 
-func marshal(in reflect.Value) (map[string]interface{}, error) {
+func marshal(ctx context, in reflect.Value) (map[string]interface{}, error) {
 	out := make(map[string]interface{})
 
 	t := in.Type()
 	for i := 0; i < t.NumField(); i++ {
+		v := in.Field(i)
 		f := t.Field(i)
-		switch actual(in.Field(i)) {
+		ctx = ctx.withField(f)
+
+		switch actualMetakind(v) {
 		case metakindBasic:
-			out[f.Name] = in.Field(i).Interface()
+			out[f.Name] = v.Interface()
 		default:
-			return nil, NewUnsupportedTypeError(actualType(in.Field(i)))
+			return nil, NewUnsupportedTypeError(ctx, actualType(v))
 		}
 	}
 
 	return out, nil
 }
 
-func actual(v reflect.Value) metakind {
+func actualMetakind(v reflect.Value) metakind {
 	switch v.Kind() {
 	case reflect.Interface:
-		return actual(v.Elem())
+		return actualMetakind(v.Elem())
 	case reflect.String, reflect.Bool,
 		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,

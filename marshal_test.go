@@ -1,6 +1,8 @@
 package jsonry_test
 
 import (
+	"fmt"
+
 	"code.cloudfoundry.org/jsonry"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -29,9 +31,9 @@ var _ = Describe("Marshal", func() {
 			"unsupported types",
 			func(input c, typeName string) {
 				_, err := jsonry.Marshal(input)
-				Expect(err).To(MatchError(ContainSubstring("unsupported type: %s", typeName)))
+				Expect(err).To(MatchError(fmt.Sprintf("unsupported type '%s' at field 'V' of type 'interface {}' at path 'V'", typeName)), err.Error())
 			},
-			Entry("complex", c{V: complex(1, 2)}, "complex"),
+			Entry("complex", c{V: complex(1, 2)}, "complex128"),
 			Entry("slice", c{V: []string{"hello"}}, "[]string"),
 			Entry("array", c{V: [1]string{"hello"}}, "[1]string"),
 			Entry("map", c{V: make(map[string]interface{})}, "map[string]interface {}"),
