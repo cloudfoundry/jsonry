@@ -1,8 +1,6 @@
 package jsonry_test
 
 import (
-	"fmt"
-
 	"code.cloudfoundry.org/jsonry"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -39,18 +37,25 @@ var _ = Describe("Marshal", func() {
 			Entry("pointer", c{V: &i}, `{"V":0}`),
 			Entry("slice", c{V: []interface{}{"hello", true, 42}}, `{"V":["hello",true,42]}`),
 			Entry("array", c{V: [3]interface{}{"hello", true, 42}}, `{"V":["hello",true,42]}`),
+			Entry("map of interfaces", c{V: map[string]interface{}{"foo": "hello", "bar": true, "baz": 42}}, `{"V":{"foo":"hello","bar":true,"baz":42}}`),
+			Entry("map of strings", c{V: map[string]string{"foo": "hello", "bar": "true", "baz": "42"}}, `{"V":{"foo":"hello","bar":"true","baz":"42"}}`),
 		)
 
 		DescribeTable(
 			"unsupported types",
-			func(input c, typeName string) {
+			func(input c, message string) {
 				_, err := jsonry.Marshal(input)
-				Expect(err).To(MatchError(fmt.Sprintf(`unsupported type "%s" at field "V" (type "interface {}")`, typeName)), err.Error())
+				Expect(err).To(MatchError(message), func() string {
+					if err != nil {
+						return err.Error()
+					}
+					return "there was no error"
+				})
 			},
-			Entry("complex", c{V: complex(1, 2)}, "complex128"),
-			Entry("map", c{V: make(map[string]interface{})}, "map[string]interface {}"),
-			Entry("channel", c{V: make(chan bool)}, "chan bool"),
-			Entry("func", c{V: func() {}}, "func()"),
+			Entry("complex", c{V: complex(1, 2)}, `unsupported type "complex128" at field "V" (type "interface {}")`),
+			Entry("channel", c{V: make(chan bool)}, `unsupported type "chan bool" at field "V" (type "interface {}")`),
+			Entry("func", c{V: func() {}}, `unsupported type "func()" at field "V" (type "interface {}")`),
+			Entry("map with non-string keys", c{V: map[int]interface{}{4: 3}}, `maps must only have strings keys for "map[int]interface {}" at field "V" (type "interface {}")`),
 		)
 	})
 

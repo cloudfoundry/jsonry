@@ -14,11 +14,12 @@ const (
 	basicSort sort = iota
 	structSort
 	listSort
+	mapSort
 	unsupportedSort
 )
 
 func Marshal(input interface{}) ([]byte, error) {
-	i := actualValue(reflect.ValueOf(input))
+	i := underlyingValue(reflect.ValueOf(input))
 
 	if i.Kind() != reflect.Struct {
 		return nil, errors.New("the input must be a struct")
@@ -32,38 +33,30 @@ func Marshal(input interface{}) ([]byte, error) {
 	return json.Marshal(m)
 }
 
-func marshal(ctx context.Context, in reflect.Value) (interface{}, error) {
+func marshal(ctx context.Context, in reflect.Value) (r interface{}, err error) {
 	switch sortOf(in) {
 	case basicSort:
-		return in.Interface(), nil
+		r = in.Interface()
 	case structSort:
-		r, err := marshalStruct(ctx, actualValue(in))
-		if err != nil {
-			return nil, err
-		}
-		return r, nil
+		r, err = marshalStruct(ctx, underlyingValue(in))
 	case listSort:
-		r, err := marshalList(ctx, actualValue(in))
-		if err != nil {
-			return nil, err
-		}
-		return r, nil
+		r, err = marshalList(ctx, underlyingValue(in))
+	case mapSort:
+		r, err = marshalMap(ctx, underlyingValue(in))
 	default:
-		return nil, NewUnsupportedTypeError(ctx, actualType(in))
+		err = NewUnsupportedTypeError(ctx, underlyingType(in))
 	}
-	return nil, nil
+	return
 }
 
 func marshalStruct(ctx context.Context, in reflect.Value) (map[string]interface{}, error) {
 	out := make(map[string]interface{})
 
-	t := actualType(in)
+	t := in.Type()
 	for i := 0; i < t.NumField(); i++ {
-		v := in.Field(i)
 		f := t.Field(i)
-		ctx := ctx.WithField(f)
 
-		r, err := marshal(ctx, v)
+		r, err := marshal(ctx.WithField(f.Name, f.Type), in.Field(i))
 		if err != nil {
 			return nil, err
 		}
@@ -89,8 +82,30 @@ func marshalList(ctx context.Context, in reflect.Value) ([]interface{}, error) {
 	return out, nil
 }
 
+func marshalMap(ctx context.Context, in reflect.Value) (map[string]interface{}, error) {
+	out := make(map[string]interface{})
+
+	iter := in.MapRange()
+	for iter.Next() {
+		k := iter.Key()
+		if k.Kind() != reflect.String {
+			return nil, NewUnsupportedKeyTypeError(ctx, underlyingType(in))
+		}
+
+		ctx := ctx.WithKey(k.String(), k.Type())
+
+		r, err := marshal(ctx, iter.Value())
+		if err != nil {
+			return nil, err
+		}
+		out[k.String()] = r
+	}
+
+	return out, nil
+}
+
 func sortOf(v reflect.Value) sort {
-	switch actualValue(v).Kind() {
+	switch underlyingValue(v).Kind() {
 	case reflect.Struct:
 		return structSort
 	case reflect.String, reflect.Bool,
@@ -100,24 +115,28 @@ func sortOf(v reflect.Value) sort {
 		return basicSort
 	case reflect.Slice, reflect.Array:
 		return listSort
+	case reflect.Map:
+		return mapSort
 	default:
 		return unsupportedSort
 	}
 }
 
-func actualType(v reflect.Value) reflect.Type {
+func underlyingType(v reflect.Value) reflect.Type {
 	switch v.Kind() {
 	case reflect.Interface:
-		return v.Elem().Type()
+		return underlyingType(v.Elem())
+	case reflect.Ptr:
+		return reflect.PtrTo(underlyingType(v.Elem()))
 	default:
 		return v.Type()
 	}
 }
 
-func actualValue(v reflect.Value) reflect.Value {
+func underlyingValue(v reflect.Value) reflect.Value {
 	switch v.Kind() {
 	case reflect.Interface, reflect.Ptr:
-		return actualValue(v.Elem())
+		return underlyingValue(v.Elem())
 	default:
 		return v
 	}

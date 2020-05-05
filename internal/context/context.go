@@ -13,25 +13,19 @@ const (
 	key
 )
 
-type segment struct {
-	sort  sort
-	name  string
-	index int
-	typ   reflect.Type
-}
-
-func (s segment) String() string {
-	switch s.sort {
-	case field:
-		return fmt.Sprintf(`field "%s" (type "%s")`, s.name, s.typ)
-	case index:
-		return fmt.Sprintf(`index %d (type "%s")`, s.index, s.typ)
-	default:
-		return fmt.Sprintf(`key "%s" (type "%s")`, s.name, s.typ)
-	}
-}
-
 type Context []segment
+
+func (ctx Context) WithField(n string, t reflect.Type) Context {
+	return append(ctx, segment{sort: field, name: n, typ: t})
+}
+
+func (ctx Context) WithIndex(i int, t reflect.Type) Context {
+	return append(ctx, segment{sort: index, index: i, typ: t})
+}
+
+func (ctx Context) WithKey(k string, t reflect.Type) Context {
+	return append(ctx, segment{sort: key, name: k, typ: t})
+}
 
 func (ctx Context) String() string {
 	switch len(ctx) {
@@ -65,16 +59,4 @@ func (ctx Context) path() string {
 	}
 
 	return path
-}
-
-func (ctx Context) WithField(f reflect.StructField) Context {
-	return append(ctx, segment{sort: field, name: f.Name, typ: f.Type})
-}
-
-func (ctx Context) WithIndex(i int, t reflect.Type) Context {
-	return append(ctx, segment{sort: index, index: i, typ: t})
-}
-
-func (ctx Context) WithKey(k string, t reflect.Type) Context {
-	return append(ctx, segment{sort: key, name: k, typ: t})
 }

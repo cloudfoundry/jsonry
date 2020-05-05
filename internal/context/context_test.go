@@ -18,7 +18,7 @@ var _ = Describe("Context", func() {
 
 	When("it has a field", func() {
 		It("reports the field detail", func() {
-			ctx := context.Context{}.WithField(reflect.StructField{Name: "Foo", Type: reflect.TypeOf("")})
+			ctx := context.Context{}.WithField("Foo", reflect.TypeOf(""))
 			Expect(ctx.String()).To(Equal(`at field "Foo" (type "string")`))
 		})
 	})
@@ -42,9 +42,9 @@ var _ = Describe("Context", func() {
 	When("it has multiple fields", func() {
 		It("reports the path details", func() {
 			ctx := context.Context{}.
-				WithField(reflect.StructField{Name: "Foo", Type: reflect.TypeOf("")}).
-				WithField(reflect.StructField{Name: "Bar", Type: reflect.TypeOf(true)}).
-				WithField(reflect.StructField{Name: "Baz", Type: reflect.TypeOf(42)})
+				WithField("Foo", reflect.TypeOf("")).
+				WithField("Bar", reflect.TypeOf(true)).
+				WithField("Baz", reflect.TypeOf(42))
 
 			Expect(ctx.String()).To(Equal(`at field "Baz" (type "int") path Foo.Bar.Baz`))
 		})
@@ -75,24 +75,24 @@ var _ = Describe("Context", func() {
 		It("reports the details", func() {
 			ctx := context.Context{}.
 				WithIndex(3, reflect.TypeOf("")).
-				WithField(reflect.StructField{Name: "Foo", Type: reflect.TypeOf("")}).
+				WithField("Foo", reflect.TypeOf("")).
 				WithKey("foo", reflect.TypeOf(true)).
 				WithIndex(5, reflect.TypeOf(true)).
-				WithField(reflect.StructField{Name: "Bar", Type: reflect.TypeOf(true)}).
-				WithField(reflect.StructField{Name: "Baz", Type: reflect.TypeOf(42)}).
+				WithField("Bar", reflect.TypeOf(true)).
+				WithField("Baz", reflect.TypeOf(42)).
 				WithKey("bar", reflect.TypeOf(42)).
 				WithIndex(4, reflect.TypeOf(42))
 			Expect(ctx.String()).To(Equal(`at index 4 (type "int") path [3].Foo["foo"][5].Bar.Baz["bar"][4]`))
 
 			ctx = context.Context{}.
-				WithField(reflect.StructField{Name: "Foo", Type: reflect.TypeOf("")}).
+				WithField("Foo", reflect.TypeOf("")).
 				WithIndex(5, reflect.TypeOf(true)).
 				WithIndex(3, reflect.TypeOf("")).
 				WithKey("foo", reflect.TypeOf(true)).
-				WithField(reflect.StructField{Name: "Bar", Type: reflect.TypeOf(true)}).
+				WithField("Bar", reflect.TypeOf(true)).
 				WithKey("bar", reflect.TypeOf(42)).
 				WithIndex(4, reflect.TypeOf(42)).
-				WithField(reflect.StructField{Name: "Baz", Type: reflect.TypeOf(42)})
+				WithField("Baz", reflect.TypeOf(42))
 			Expect(ctx.String()).To(Equal(`at field "Baz" (type "int") path Foo[5][3]["foo"].Bar["bar"][4].Baz`))
 		})
 	})
