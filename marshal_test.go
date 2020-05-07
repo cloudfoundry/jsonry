@@ -24,10 +24,10 @@ func (j jsm) MarshalJSON() ([]byte, error) {
 	return json.Marshal("hello")
 }
 
-type jrm bool
+type jrm struct{ value bool }
 
 func (j jrm) MarshalJSONry() (interface{}, error) {
-	if j {
+	if j.value {
 		return nil, errors.New("ouch")
 	}
 	return "hello", nil
@@ -67,6 +67,7 @@ var _ = Describe("Marshal", func() {
 		Entry("map of interfaces", c{V: map[string]interface{}{"foo": "hello", "bar": true, "baz": 42}}, `{"V":{"foo":"hello","bar":true,"baz":42}}`),
 		Entry("map of strings", c{V: map[string]string{"foo": "hello", "bar": "true", "baz": "42"}}, `{"V":{"foo":"hello","bar":"true","baz":"42"}}`),
 		Entry("json.Marshaler", c{V: jsm{}}, `{"V": "hello"}`),
+		Entry("jsonry.Marshaler", c{V: jrm{}}, `{"V": "hello"}`),
 	)
 
 	DescribeTable(
@@ -85,6 +86,7 @@ var _ = Describe("Marshal", func() {
 		Entry("func", c{V: func() {}}, `unsupported type "func()" at field "V" (type "interface {}")`),
 		Entry("map with non-string keys", c{V: map[int]interface{}{4: 3}}, `maps must only have strings keys for "map[int]interface {}" at field "V" (type "interface {}")`),
 		Entry("json.Marshaler with failure", c{V: jsm{value: true}}, `error from MarshaJSON() call at field "V" (type "interface {}"): ouch`),
+		Entry("jsonry.Marshaler with failure", c{V: jrm{value: true}}, `error from MarshaJSONry() call at field "V" (type "interface {}"): ouch`),
 	)
 
 	Describe("inputs", func() {

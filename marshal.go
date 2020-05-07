@@ -30,15 +30,15 @@ func Marshal(input interface{}) ([]byte, error) {
 }
 
 func marshal(ctx context.Context, in reflect.Value) (r interface{}, err error) {
-	ut := underlyingType(in)
 	uv := underlyingValue(in)
+	ut := uv.Type()
 	k := uv.Kind()
 
 	switch {
 	case ut.Implements(reflect.TypeOf((*json.Marshaler)(nil)).Elem()):
 		r, err = marshalJSONMarshaler(ctx, uv)
 	case ut.Implements(reflect.TypeOf((*Marshaler)(nil)).Elem()):
-		panic("not done yet")
+		r, err = marshalJSONryMarshaler(ctx, uv)
 	case k == reflect.Struct:
 		r, err = marshalStruct(ctx, uv)
 	case isBasicType(k):
@@ -97,7 +97,7 @@ func marshalMap(ctx context.Context, in reflect.Value) (map[string]interface{}, 
 	for iter.Next() {
 		k := iter.Key()
 		if k.Kind() != reflect.String {
-			return nil, NewUnsupportedKeyTypeError(ctx, underlyingType(in))
+			return nil, NewUnsupportedKeyTypeError(ctx, in.Type())
 		}
 
 		ctx := ctx.WithKey(k.String(), k.Type())
@@ -128,6 +128,29 @@ func marshalJSONMarshaler(ctx context.Context, in reflect.Value) (interface{}, e
 	return r, nil
 }
 
+func marshalJSONryMarshaler(ctx context.Context, in reflect.Value) (interface{}, error) {
+	t := in.MethodByName("MarshalJSONry").Call(nil)
+
+	if !t[1].IsNil() {
+		return nil, fmt.Errorf("error from MarshaJSONry() call %s: %w", ctx, toError(t[1]))
+	}
+
+	if !t[0].CanInterface() {
+		return nil, fmt.Errorf(`cannot convert output of MarshaJSONry() to interface "%s" %s`, t[0], ctx)
+	}
+
+	return t[0].Interface(), nil
+}
+
+func underlyingValue(v reflect.Value) reflect.Value {
+	switch v.Kind() {
+	case reflect.Interface, reflect.Ptr:
+		return underlyingValue(v.Elem())
+	default:
+		return v
+	}
+}
+
 func isBasicType(k reflect.Kind) bool {
 	switch k {
 	case reflect.String, reflect.Bool,
@@ -137,26 +160,6 @@ func isBasicType(k reflect.Kind) bool {
 		return true
 	default:
 		return false
-	}
-}
-
-func underlyingType(v reflect.Value) reflect.Type {
-	switch v.Kind() {
-	case reflect.Interface:
-		return underlyingType(v.Elem())
-	case reflect.Ptr:
-		return reflect.PtrTo(underlyingType(v.Elem()))
-	default:
-		return v.Type()
-	}
-}
-
-func underlyingValue(v reflect.Value) reflect.Value {
-	switch v.Kind() {
-	case reflect.Interface, reflect.Ptr:
-		return underlyingValue(v.Elem())
-	default:
-		return v
 	}
 }
 
