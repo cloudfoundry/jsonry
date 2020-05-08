@@ -30,7 +30,7 @@ func (j jrm) MarshalJSONry() (interface{}, error) {
 	if j.value {
 		return nil, errors.New("ouch")
 	}
-	return "hello", nil
+	return &pri{private: true, Public: true}, nil
 }
 
 var _ = Describe("Marshal", func() {
@@ -39,7 +39,7 @@ var _ = Describe("Marshal", func() {
 	var i int
 
 	DescribeTable(
-		"supported conversions",
+		"supported types",
 		func(input c, expected string) {
 			out, err := jsonry.Marshal(input)
 			Expect(err).NotTo(HaveOccurred())
@@ -62,16 +62,17 @@ var _ = Describe("Marshal", func() {
 		Entry("struct", c{V: c{V: "hierarchical"}}, `{"V":{"V":"hierarchical"}}`),
 		Entry("struct with private field", c{V: pri{private: true, Public: true}}, `{"V":{"Public":true}}`),
 		Entry("pointer", c{V: &i}, `{"V":0}`),
+		Entry("nil pointer", c{V: (*int)(nil)}, `{"V":null}`),
 		Entry("slice", c{V: []interface{}{"hello", true, 42}}, `{"V":["hello",true,42]}`),
 		Entry("array", c{V: [3]interface{}{"hello", true, 42}}, `{"V":["hello",true,42]}`),
 		Entry("map of interfaces", c{V: map[string]interface{}{"foo": "hello", "bar": true, "baz": 42}}, `{"V":{"foo":"hello","bar":true,"baz":42}}`),
 		Entry("map of strings", c{V: map[string]string{"foo": "hello", "bar": "true", "baz": "42"}}, `{"V":{"foo":"hello","bar":"true","baz":"42"}}`),
-		Entry("json.Marshaler", c{V: jsm{}}, `{"V": "hello"}`),
-		Entry("jsonry.Marshaler", c{V: jrm{}}, `{"V": "hello"}`),
+		Entry("json.Marshaler", c{V: jsm{}}, `{"V":"hello"}`),
+		Entry("jsonry.Marshaler", c{V: jrm{}}, `{"V":{"Public":true}}`),
 	)
 
 	DescribeTable(
-		"failure cases",
+		"type failure cases",
 		func(input c, message string) {
 			_, err := jsonry.Marshal(input)
 			Expect(err).To(MatchError(message), func() string {
@@ -112,6 +113,61 @@ var _ = Describe("Marshal", func() {
 			var sp *s
 			_, err := jsonry.Marshal(sp)
 			Expect(err).To(MatchError(`the input must be a struct, not "invalid"`))
+		})
+	})
+
+	Describe("paths", func() {
+		It("defaults the path to the field name", func() {
+			s := struct{ GUID string }{GUID: "123"}
+			r, err := jsonry.Marshal(s)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(r).To(MatchJSON(`{"GUID":"123"}`))
+		})
+
+		It("will respect a JSON tag", func() {
+			s := struct {
+				GUID string `json:"guid"`
+			}{GUID: "123"}
+			r, err := jsonry.Marshal(s)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(r).To(MatchJSON(`{"guid":"123"}`))
+		})
+
+		It("will respect a JSONry tag", func() {
+			s := struct {
+				GUID string `jsonry:"relationships.spaces[].guid"`
+			}{GUID: "123"}
+			r, err := jsonry.Marshal(s)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(r).To(MatchJSON(`{"relationships":{"spaces":[{"guid":"123"}]}}`))
+		})
+	})
+
+	Describe("omitempty", func() {
+		It("omits zero values", func() {
+			s := struct {
+				A string `json:",omitempty"`
+				B string `json:"bee,omitempty"`
+				C string `jsonry:",omitempty"`
+				D string `jsonry:"dee,omitempty"`
+				E string
+			}{}
+			r, err := jsonry.Marshal(s)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(r).To(MatchJSON(`{"E":""}`))
+		})
+
+		It("omits nil pointers", func() {
+			s := struct {
+				A *string `json:",omitempty"`
+				B *string `json:"bee,omitempty"`
+				C *string `jsonry:",omitempty"`
+				D *string `jsonry:"dee,omitempty"`
+				E *string
+			}{}
+			r, err := jsonry.Marshal(s)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(r).To(MatchJSON(`{"E":null}`))
 		})
 	})
 })

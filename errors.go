@@ -8,33 +8,33 @@ import (
 )
 
 type UnsupportedType struct {
-	Context  context.Context
-	TypeName string
+	context context.Context
+	typ     reflect.Type
 }
 
-func NewUnsupportedTypeError(ctx context.Context, t reflect.Type) *UnsupportedType {
+func newUnsupportedTypeError(ctx context.Context, t reflect.Type) *UnsupportedType {
 	return &UnsupportedType{
-		Context:  ctx,
-		TypeName: t.String(),
+		context: ctx,
+		typ:     t,
 	}
 }
 
 func (u UnsupportedType) Error() string {
-	return fmt.Sprintf(`unsupported type "%s" %s`, u.TypeName, u.Context)
+	return fmt.Sprintf(`unsupported type "%s" %s`, u.typ, u.context)
 }
 
 type UnsupportedKeyType struct {
-	Context  context.Context
-	TypeName string
+	context context.Context
+	typ     reflect.Type
 }
 
-func NewUnsupportedKeyTypeError(ctx context.Context, t reflect.Type) *UnsupportedKeyType {
+func newUnsupportedKeyTypeError(ctx context.Context, t reflect.Type) *UnsupportedKeyType {
 	return &UnsupportedKeyType{
-		Context:  ctx,
-		TypeName: t.String(),
+		context: ctx,
+		typ:     t,
 	}
 }
 
 func (u UnsupportedKeyType) Error() string {
-	return fmt.Sprintf(`maps must only have strings keys for "%s" %s`, u.TypeName, u.Context)
+	return fmt.Sprintf(`maps must only have strings keys for "%s" %s`, u.typ, u.context)
 }
