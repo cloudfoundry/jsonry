@@ -9,5 +9,5 @@ import (
 
 func TestTree(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Tree Suite")
+	RunSpecs(t, "JSONry Internal Tree Suite")
 }

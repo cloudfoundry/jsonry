@@ -9,5 +9,5 @@ import (
 
 func TestPath(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Path Suite")
+	RunSpecs(t, "JSONry Internal Path Suite")
 }
