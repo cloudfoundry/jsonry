@@ -18,13 +18,13 @@ type Marshaler interface {
 }
 
 func Marshal(input interface{}) ([]byte, error) {
-	i, _, k := underlying(reflect.ValueOf(input))
+	iv := inspectValue(reflect.ValueOf(input))
 
-	if k != reflect.Struct {
-		return nil, fmt.Errorf(`the input must be a struct, not "%s"`, i.Kind())
+	if iv.realKind != reflect.Struct {
+		return nil, fmt.Errorf(`the input must be a struct, not "%s"`, iv.realKind)
 	}
 
-	m, err := marshal(context.Context{}, i)
+	m, err := marshalStruct(context.Context{}, iv.realValue, iv.realType)
 	if err != nil {
 		return nil, err
 	}
@@ -33,39 +33,37 @@ func Marshal(input interface{}) ([]byte, error) {
 }
 
 func marshal(ctx context.Context, in reflect.Value) (r interface{}, err error) {
-	uv, ut, k := underlying(in)
+	input := inspectValue(in)
 
 	switch {
-	case implements(ut, (*json.Marshaler)(nil)):
-		r, err = marshalJSONMarshaler(ctx, uv)
-	case implements(ut, (*Marshaler)(nil)):
-		r, err = marshalJSONryMarshaler(ctx, uv)
-	case isBasicType(k):
+	case implements(input.realType, (*json.Marshaler)(nil)):
+		r, err = marshalJSONMarshaler(ctx, input.realValue)
+	case implements(input.realType, (*Marshaler)(nil)):
+		r, err = marshalJSONryMarshaler(ctx, input.realValue)
+	case basicType(input.realKind):
 		r = in.Interface()
-	case k == reflect.Invalid:
+	case input.realKind == reflect.Invalid:
 		r = nil
-	case k == reflect.Struct:
-		r, err = marshalStruct(ctx, uv)
-	case k == reflect.Slice || k == reflect.Array:
-		r, err = marshalList(ctx, uv)
-	case k == reflect.Map:
-		r, err = marshalMap(ctx, uv)
+	case input.realKind == reflect.Struct:
+		r, err = marshalStruct(ctx, input.realValue, input.realType)
+	case input.realKind == reflect.Slice || input.realKind == reflect.Array:
+		r, err = marshalList(ctx, input.realValue)
+	case input.realKind == reflect.Map:
+		r, err = marshalMap(ctx, input.realValue)
 	default:
-		err = newUnsupportedTypeError(ctx, ut)
+		err = newUnsupportedTypeError(ctx, input.realType)
 	}
 
 	return
 }
 
-func marshalStruct(ctx context.Context, in reflect.Value) (map[string]interface{}, error) {
+func marshalStruct(ctx context.Context, in reflect.Value, t reflect.Type) (map[string]interface{}, error) {
 	out := make(tree.Tree)
 
-	t := in.Type()
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
-		private := f.PkgPath != ""
 
-		if !private {
+		if public(f) {
 			p := path.ComputePath(f)
 			if !p.OmitEmpty || !in.Field(i).IsZero() {
 				r, err := marshal(ctx.WithField(f.Name, f.Type), in.Field(i))
@@ -142,30 +140,6 @@ func marshalJSONryMarshaler(ctx context.Context, in reflect.Value) (interface{},
 	}
 
 	return marshal(ctx, t[0])
-}
-
-func underlying(v reflect.Value) (reflect.Value, reflect.Type, reflect.Kind) {
-	k := v.Kind()
-	switch k {
-	case reflect.Interface, reflect.Ptr:
-		return underlying(v.Elem())
-	case reflect.Invalid:
-		return v, nil, k
-	default:
-		return v, v.Type(), k
-	}
-}
-
-func isBasicType(k reflect.Kind) bool {
-	switch k {
-	case reflect.String, reflect.Bool,
-		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
-		reflect.Float32, reflect.Float64:
-		return true
-	default:
-		return false
-	}
 }
 
 func toError(v reflect.Value) error {

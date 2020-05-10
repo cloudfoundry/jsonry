@@ -39,4 +39,86 @@ var _ = Describe("Tree", func() {
 			})
 		})
 	})
+
+	Describe("Fetch", func() {
+		It("can fetch a basic value", func() {
+			var t tree.Tree
+			Expect(json.Unmarshal([]byte(`{"a":{"b":{"c":{"d":{"e":"hello"}}}}}`), &t)).NotTo(HaveOccurred())
+			p := path.ComputePath(reflect.StructField{Tag: `jsonry:"a.b.c.d.e"`})
+
+			v, ok := t.Fetch(p)
+			Expect(ok).To(BeTrue())
+			Expect(v).To(Equal("hello"))
+		})
+
+		It("says not ok when not there", func() {
+			var t tree.Tree
+			Expect(json.Unmarshal([]byte(`{"a":{"b":{"c":{"d":{"e":"hello"}}}}}`), &t)).NotTo(HaveOccurred())
+			p := path.ComputePath(reflect.StructField{Tag: `jsonry:"a.b.not_there.d.e"`})
+
+			v, ok := t.Fetch(p)
+			Expect(ok).To(BeFalse())
+			Expect(v).To(BeNil())
+		})
+
+		It("can fetch a nil", func() {
+			var t tree.Tree
+			Expect(json.Unmarshal([]byte(`{"a":{"b":{"c":{"d":{"e":null}}}}}`), &t)).NotTo(HaveOccurred())
+			p := path.ComputePath(reflect.StructField{Tag: `jsonry:"a.b.c.d.e"`})
+
+			v, ok := t.Fetch(p)
+			Expect(ok).To(BeTrue())
+			Expect(v).To(BeNil())
+		})
+
+		It("can fetch an object", func() {
+			var t tree.Tree
+			Expect(json.Unmarshal([]byte(`{"a":{"b":{"c":{"d":{"e":"hello"}}}}}`), &t)).NotTo(HaveOccurred())
+			p := path.ComputePath(reflect.StructField{Tag: `jsonry:"a.b.c"`})
+
+			v, ok := t.Fetch(p)
+			Expect(ok).To(BeTrue())
+			Expect(v).To(Equal(map[string]interface{}{"d": map[string]interface{}{"e": "hello"}}))
+		})
+
+		It("can fetch a list at the leaf", func() {
+			var t tree.Tree
+			Expect(json.Unmarshal([]byte(`{"a":{"b":{"c":{"d":{"e":["h","e","l","l","o"]}}}}}`), &t)).NotTo(HaveOccurred())
+			p := path.ComputePath(reflect.StructField{Tag: `jsonry:"a.b.c.d.e"`})
+
+			v, ok := t.Fetch(p)
+			Expect(ok).To(BeTrue())
+			Expect(v).To(Equal([]interface{}{"h", "e", "l", "l", "o"}))
+		})
+
+		It("can fetch a list at a branch", func() {
+			var t tree.Tree
+			Expect(json.Unmarshal([]byte(`{"a":{"b":{"c":[{"d":{"e":"h"}},{"d":{"e":"i"}},{"d":{"e":"!"}}]}}}`), &t)).NotTo(HaveOccurred())
+			p := path.ComputePath(reflect.StructField{Tag: `jsonry:"a.b.c.d.e"`})
+
+			v, ok := t.Fetch(p)
+			Expect(ok).To(BeTrue())
+			Expect(v).To(Equal([]interface{}{"h", "i", "!"}))
+		})
+
+		It("inserts nils when a list has missing elements", func() {
+			var t tree.Tree
+			Expect(json.Unmarshal([]byte(`{"a":{"b":{"c":[{"d":{"e":"h"}},{},{"d":{"e":"i"}},{"e":4},{"d":{"e":"!"}}]}}}`), &t)).NotTo(HaveOccurred())
+			p := path.ComputePath(reflect.StructField{Tag: `jsonry:"a.b.c.d.e"`})
+
+			v, ok := t.Fetch(p)
+			Expect(ok).To(BeTrue())
+			Expect(v).To(Equal([]interface{}{"h", nil, "i", nil, "!"}))
+		})
+
+		It("flattens lists of lists", func() {
+			var t tree.Tree
+			Expect(json.Unmarshal([]byte(`{"a":{"b":{"c":[[{"d":{"e":"h"}}],[{}],{"d":{"e":"i"}},[],{"d":{"e":"!"}}]}}}`), &t)).NotTo(HaveOccurred())
+			p := path.ComputePath(reflect.StructField{Tag: `jsonry:"a.b.c.d.e"`})
+
+			v, ok := t.Fetch(p)
+			Expect(ok).To(BeTrue())
+			Expect(v).To(Equal([]interface{}{"h", nil, "i", "!"}))
+		})
+	})
 })

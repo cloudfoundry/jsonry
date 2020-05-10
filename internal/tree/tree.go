@@ -13,8 +13,8 @@ func (t Tree) Attach(p path.Path, v interface{}) Tree {
 	case 0:
 		panic("empty path")
 	case 1:
-		branch, _ := p.Pull()
-		t[branch.Name] = v
+		leaf, _ := p.Pull()
+		t[leaf.Name] = v
 	default:
 		branch, stem := p.Pull()
 		if branch.List {
@@ -30,6 +30,32 @@ func (t Tree) Attach(p path.Path, v interface{}) Tree {
 	return t
 }
 
+func (t Tree) Fetch(p path.Path) (interface{}, bool) {
+	switch p.Len() {
+	case 0:
+		panic("empty path")
+	case 1:
+		leaf, _ := p.Pull()
+		v, ok := t[leaf.Name]
+		return v, ok
+	default:
+		branch, stem := p.Pull()
+		v, ok := t[branch.Name]
+		if !ok {
+			return nil, false
+		}
+
+		switch vt := v.(type) {
+		case map[string]interface{}:
+			return Tree(vt).Fetch(stem)
+		case []interface{}:
+			return unspread(vt, stem), true
+		default:
+			return nil, false
+		}
+	}
+}
+
 func spread(p path.Path, v interface{}) []interface{} {
 	vv := reflect.ValueOf(v)
 	if vv.Kind() != reflect.Array && vv.Kind() != reflect.Slice {
@@ -42,4 +68,24 @@ func spread(p path.Path, v interface{}) []interface{} {
 		s = append(s, make(Tree).Attach(p, vv.Index(i).Interface()))
 	}
 	return s
+}
+
+func unspread(v []interface{}, stem path.Path) []interface{} {
+	l := make([]interface{}, 0, len(v))
+	for i := range v {
+		switch vt := v[i].(type) {
+		case map[string]interface{}:
+			if r, ok := Tree(vt).Fetch(stem); ok {
+				l = append(l, r)
+			} else {
+				l = append(l, nil)
+			}
+		case []interface{}:
+			l = append(l, unspread(vt, stem)...)
+		default:
+			l = append(l, v[i])
+		}
+	}
+
+	return l
 }

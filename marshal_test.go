@@ -69,6 +69,8 @@ var _ = Describe("Marshal", func() {
 			Entry("uint64", c{V: uint64(42)}, `{"V":42}`),
 			Entry("float32", c{V: float32(4.2)}, `{"V":4.2}`),
 			Entry("float64", c{V: 4.2}, `{"V":4.2}`),
+			Entry("nil", c{V: nil}, `{"V":null}`),
+			Entry("interface{}", c{}, `{"V":null}`),
 			Entry("struct", c{V: c{V: "hierarchical"}}, `{"V":{"V":"hierarchical"}}`),
 			Entry("struct with private field", c{V: pri{private: true, Public: true}}, `{"V":{"Public":true}}`),
 			Entry("pointer", c{V: &i}, `{"V":0}`),
