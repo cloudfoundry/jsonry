@@ -53,30 +53,31 @@ var _ = Describe("Unmarshal", func() {
 	})
 
 	Describe("types", func() {
-
 		type b struct {
 			S string
 		}
 
 		type c struct {
-			private string
-			S       string
-			B       bool
-			I       int
-			I8      int8
-			I16     int16
-			I32     int32
-			I64     int64
-			U       uint
-			U8      uint8
-			U16     uint16
-			U32     uint32
-			U64     uint64
-			F32     float32
-			F64     float64
-			V       b
-			PI      *int
-			PV      *b
+			S   string
+			B   bool
+			I   int
+			I8  int8
+			I16 int16
+			I32 int32
+			I64 int64
+			U   uint
+			U8  uint8
+			U16 uint16
+			U32 uint32
+			U64 uint64
+			F32 float32
+			F64 float64
+			In  interface{}
+			Ss  []string
+			Bs  []b
+			V   b
+			PI  *int
+			PV  *b
 		}
 
 		i := 42
@@ -84,10 +85,9 @@ var _ = Describe("Unmarshal", func() {
 		DescribeTable(
 			"supported types",
 			func(input string, expected c) {
-				result := c{private: "should not touch"}
+				var result c
 				err := jsonry.Unmarshal([]byte(input), &result)
 				Expect(err).NotTo(HaveOccurred())
-				expected.private = "should not touch"
 				Expect(result).To(Equal(expected))
 			},
 			Entry("string", `{"S":"hello"}`, c{S: "hello"}),
@@ -104,9 +104,14 @@ var _ = Describe("Unmarshal", func() {
 			Entry("uint64", `{"U64":42}`, c{U64: uint64(42)}),
 			Entry("float32", `{"F32":4.2}`, c{F32: float32(4.2)}),
 			Entry("float64", `{"F64":4.2}`, c{F64: 4.2}),
+			Entry("interface as basic", `{"In":"hello"}`, c{In: "hello"}),
+			Entry("interface as nil", `{"In":null}`, c{In: nil}),
+			Entry("interface as map", `{"In":{"foo":"bar"}}}`, c{In: map[string]interface{}{"foo": "bar"}}),
 			Entry("pointer", `{"PI":42}`, c{PI: &i}),
 			Entry("nil pointer", `{"PI":null}`, c{PI: nil}),
 			Entry("struct", `{"V":{"S":"hierarchical"}}`, c{V: b{S: "hierarchical"}}),
+			Entry("basic list", `{"Ss":["foo","bar","baz"]}`, c{Ss: []string{"foo", "bar", "baz"}}),
+			Entry("struct list", `{"Bs":[{"S":"foo"},{"S":"bar"},{"S":"baz"}]}`, c{Bs: []b{{S: "foo"}, {S: "bar"}, {S: "baz"}}}),
 		)
 
 		DescribeTable(
@@ -121,7 +126,9 @@ var _ = Describe("Unmarshal", func() {
 					return "there was no error"
 				})
 			},
-			Entry("basic type mismatch", `{"I":"hello"}`, `cannot convert value of type "string" to type "int" at field "I" (type "int")`),
+			Entry("basic type mismatch", `{"I":"hello"}`, `cannot unmarshal "hello" type "string" into field "I" (type "int")`),
+			Entry("nil into non-pointer", `{"I":null}`, `cannot unmarshal "<nil>" into field "I" (type "int")`),
+			Entry("float into int", `{"I":4.2}`, `cannot unmarshal "4.2" into field "I" (type "int")`),
 		)
 	})
 

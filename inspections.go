@@ -19,10 +19,10 @@ func basicType(k reflect.Kind) bool {
 }
 
 type valueDetails struct {
-	realValue reflect.Value
-	realType  reflect.Type
-	realKind  reflect.Kind
-	pointer   bool
+	value   reflect.Value
+	typ     reflect.Type
+	kind    reflect.Kind
+	pointer bool
 }
 
 func inspectValue(v reflect.Value) valueDetails {
@@ -36,17 +36,17 @@ func inspectValue(v reflect.Value) valueDetails {
 		return inspectValue(v.Elem())
 	case reflect.Invalid:
 		return valueDetails{
-			realValue: v,
-			realType:  nil,
-			realKind:  k,
-			pointer:   false,
+			value:   v,
+			typ:     nil,
+			kind:    k,
+			pointer: false,
 		}
 	default:
 		return valueDetails{
-			realValue: v,
-			realType:  v.Type(),
-			realKind:  k,
-			pointer:   false,
+			value:   v,
+			typ:     v.Type(),
+			kind:    k,
+			pointer: false,
 		}
 	}
 }

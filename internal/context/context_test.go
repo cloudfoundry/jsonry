@@ -12,21 +12,21 @@ var _ = Describe("Context", func() {
 	When("it is the zero value", func() {
 		It("reports being at the root", func() {
 			ctx := context.Context{}
-			Expect(ctx.String()).To(Equal("at the root"))
+			Expect(ctx.String()).To(Equal("root path"))
 		})
 	})
 
 	When("it has a field", func() {
 		It("reports the field detail", func() {
 			ctx := context.Context{}.WithField("Foo", reflect.TypeOf(""))
-			Expect(ctx.String()).To(Equal(`at field "Foo" (type "string")`))
+			Expect(ctx.String()).To(Equal(`field "Foo" (type "string")`))
 		})
 	})
 
 	When("it has an index", func() {
 		It("reports the index detail", func() {
 			ctx := context.Context{}.WithIndex(4, reflect.TypeOf(true))
-			Expect(ctx.String()).To(Equal(`at index 4 (type "bool")`))
+			Expect(ctx.String()).To(Equal(`index 4 (type "bool")`))
 
 		})
 	})
@@ -34,7 +34,7 @@ var _ = Describe("Context", func() {
 	When("it has an key", func() {
 		It("reports the key detail", func() {
 			ctx := context.Context{}.WithKey("foo", reflect.TypeOf(true))
-			Expect(ctx.String()).To(Equal(`at key "foo" (type "bool")`))
+			Expect(ctx.String()).To(Equal(`key "foo" (type "bool")`))
 
 		})
 	})
@@ -46,7 +46,7 @@ var _ = Describe("Context", func() {
 				WithField("Bar", reflect.TypeOf(true)).
 				WithField("Baz", reflect.TypeOf(42))
 
-			Expect(ctx.String()).To(Equal(`at field "Baz" (type "int") path Foo.Bar.Baz`))
+			Expect(ctx.String()).To(Equal(`field "Baz" (type "int") path Foo.Bar.Baz`))
 		})
 	})
 
@@ -56,7 +56,7 @@ var _ = Describe("Context", func() {
 				WithIndex(3, reflect.TypeOf("")).
 				WithIndex(5, reflect.TypeOf(true)).
 				WithIndex(4, reflect.TypeOf(42))
-			Expect(ctx.String()).To(Equal(`at index 4 (type "int") path [3][5][4]`))
+			Expect(ctx.String()).To(Equal(`index 4 (type "int") path [3][5][4]`))
 		})
 	})
 
@@ -66,7 +66,7 @@ var _ = Describe("Context", func() {
 				WithKey("foo", reflect.TypeOf(true)).
 				WithKey("bar", reflect.TypeOf(42)).
 				WithKey("baz", reflect.TypeOf(""))
-			Expect(ctx.String()).To(Equal(`at key "baz" (type "string") path ["foo"]["bar"]["baz"]`))
+			Expect(ctx.String()).To(Equal(`key "baz" (type "string") path ["foo"]["bar"]["baz"]`))
 
 		})
 	})
@@ -82,7 +82,7 @@ var _ = Describe("Context", func() {
 				WithField("Baz", reflect.TypeOf(42)).
 				WithKey("bar", reflect.TypeOf(42)).
 				WithIndex(4, reflect.TypeOf(42))
-			Expect(ctx.String()).To(Equal(`at index 4 (type "int") path [3].Foo["foo"][5].Bar.Baz["bar"][4]`))
+			Expect(ctx.String()).To(Equal(`index 4 (type "int") path [3].Foo["foo"][5].Bar.Baz["bar"][4]`))
 
 			ctx = context.Context{}.
 				WithField("Foo", reflect.TypeOf("")).
@@ -93,7 +93,7 @@ var _ = Describe("Context", func() {
 				WithKey("bar", reflect.TypeOf(42)).
 				WithIndex(4, reflect.TypeOf(42)).
 				WithField("Baz", reflect.TypeOf(42))
-			Expect(ctx.String()).To(Equal(`at field "Baz" (type "int") path Foo[5][3]["foo"].Bar["bar"][4].Baz`))
+			Expect(ctx.String()).To(Equal(`field "Baz" (type "int") path Foo[5][3]["foo"].Bar["bar"][4].Baz`))
 		})
 	})
 

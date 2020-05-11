@@ -30,11 +30,11 @@ func (ctx Context) WithKey(k string, t reflect.Type) Context {
 func (ctx Context) String() string {
 	switch len(ctx) {
 	case 0:
-		return "at the root"
+		return "root path"
 	case 1:
-		return fmt.Sprintf("at %s", ctx.leaf())
+		return ctx.leaf().String()
 	default:
-		return fmt.Sprintf("at %s path %s", ctx.leaf(), ctx.path())
+		return fmt.Sprintf("%s path %s", ctx.leaf(), ctx.path())
 	}
 }
 

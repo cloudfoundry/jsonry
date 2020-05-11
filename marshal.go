@@ -20,11 +20,11 @@ type Marshaler interface {
 func Marshal(input interface{}) ([]byte, error) {
 	iv := inspectValue(reflect.ValueOf(input))
 
-	if iv.realKind != reflect.Struct {
-		return nil, fmt.Errorf(`the input must be a struct, not "%s"`, iv.realKind)
+	if iv.kind != reflect.Struct {
+		return nil, fmt.Errorf(`the input must be a struct, not "%s"`, iv.kind)
 	}
 
-	m, err := marshalStruct(context.Context{}, iv.realValue, iv.realType)
+	m, err := marshalStruct(context.Context{}, iv.value, iv.typ)
 	if err != nil {
 		return nil, err
 	}
@@ -36,22 +36,22 @@ func marshal(ctx context.Context, in reflect.Value) (r interface{}, err error) {
 	input := inspectValue(in)
 
 	switch {
-	case implements(input.realType, (*json.Marshaler)(nil)):
-		r, err = marshalJSONMarshaler(ctx, input.realValue)
-	case implements(input.realType, (*Marshaler)(nil)):
-		r, err = marshalJSONryMarshaler(ctx, input.realValue)
-	case basicType(input.realKind):
+	case implements(input.typ, (*json.Marshaler)(nil)):
+		r, err = marshalJSONMarshaler(ctx, input.value)
+	case implements(input.typ, (*Marshaler)(nil)):
+		r, err = marshalJSONryMarshaler(ctx, input.value)
+	case basicType(input.kind):
 		r = in.Interface()
-	case input.realKind == reflect.Invalid:
+	case input.kind == reflect.Invalid:
 		r = nil
-	case input.realKind == reflect.Struct:
-		r, err = marshalStruct(ctx, input.realValue, input.realType)
-	case input.realKind == reflect.Slice || input.realKind == reflect.Array:
-		r, err = marshalList(ctx, input.realValue)
-	case input.realKind == reflect.Map:
-		r, err = marshalMap(ctx, input.realValue)
+	case input.kind == reflect.Struct:
+		r, err = marshalStruct(ctx, input.value, input.typ)
+	case input.kind == reflect.Slice || input.kind == reflect.Array:
+		r, err = marshalList(ctx, input.value)
+	case input.kind == reflect.Map:
+		r, err = marshalMap(ctx, input.value)
 	default:
-		err = newUnsupportedTypeError(ctx, input.realType)
+		err = newUnsupportedTypeError(ctx, input.typ)
 	}
 
 	return
@@ -120,13 +120,13 @@ func marshalJSONMarshaler(ctx context.Context, in reflect.Value) (interface{}, e
 	t := in.MethodByName("MarshalJSON").Call(nil)
 
 	if !t[1].IsNil() {
-		return nil, fmt.Errorf("error from MarshaJSON() call %s: %w", ctx, toError(t[1]))
+		return nil, fmt.Errorf("error from MarshaJSON() call at %s: %w", ctx, toError(t[1]))
 	}
 
 	var r interface{}
 	err := json.Unmarshal(t[0].Bytes(), &r)
 	if err != nil {
-		return nil, fmt.Errorf(`error parsing MarshaJSON() output "%s" %s: %w`, t[0].Bytes(), ctx, err)
+		return nil, fmt.Errorf(`error parsing MarshaJSON() output "%s" at %s: %w`, t[0].Bytes(), ctx, err)
 	}
 
 	return r, nil
@@ -136,7 +136,7 @@ func marshalJSONryMarshaler(ctx context.Context, in reflect.Value) (interface{},
 	t := in.MethodByName("MarshalJSONry").Call(nil)
 
 	if !t[1].IsNil() {
-		return nil, fmt.Errorf("error from MarshaJSONry() call %s: %w", ctx, toError(t[1]))
+		return nil, fmt.Errorf("error from MarshaJSONry() call at %s: %w", ctx, toError(t[1]))
 	}
 
 	return marshal(ctx, t[0])
