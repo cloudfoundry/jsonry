@@ -8,7 +8,7 @@ import (
 
 var _ = Describe("end to end", func() {
 	It("marshals", func() {
-		o := struct {
+		type s struct {
 			Num         float32               `json:"number"`
 			Spaces      []space               `jsonry:"relationships.space.data"`
 			Orgs        []string              `jsonry:"relationships.orgs.data.guids"`
@@ -18,7 +18,9 @@ var _ = Describe("end to end", func() {
 			Password    string                `jsonry:"authentication.credentials.password"`
 			Labels      map[string]nullString `jsonry:"metadata.labels"`
 			Annotations map[string]space      `jsonry:"metadata.annotations"`
-		}{
+		}
+
+		o := s{
 			Num:         12,
 			Spaces:      []space{{GUID: "foo"}, {Name: "Bar", GUID: "bar"}},
 			Orgs:        []string{"baz", "quz"},
@@ -29,6 +31,7 @@ var _ = Describe("end to end", func() {
 			Labels:      map[string]nullString{"first": {value: "one"}, "second": {null: true}},
 			Annotations: map[string]space{"alpha": {GUID: "foo"}, "beta": {Name: "Bar", GUID: "bar"}},
 		}
+
 		r, err := jsonry.Marshal(o)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(r).To(MatchJSON(`
@@ -78,5 +81,10 @@ var _ = Describe("end to end", func() {
 			  }
 			]
 		}`))
+
+		var t s
+		err = jsonry.Unmarshal(r, &t)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(t).To(Equal(o))
 	})
 })

@@ -1,6 +1,7 @@
 package jsonry
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 
@@ -36,28 +37,35 @@ func newUnsupportedKeyTypeError(ctx context.Context, t reflect.Type) error {
 }
 
 func (u UnsupportedKeyType) Error() string {
-	return fmt.Sprintf(`maps must only have strings keys for "%s" at %s`, u.typ, u.context)
+	return fmt.Sprintf(`maps must only have string keys for "%s" at %s`, u.typ, u.context)
 }
 
 type ConversionError struct {
 	context context.Context
-	typ     reflect.Type
 	value   interface{}
 }
 
-func newConversionError(ctx context.Context, v interface{}, t reflect.Type) error {
+func newConversionError(ctx context.Context, value interface{}) error {
 	return &ConversionError{
 		context: ctx,
-		typ:     t,
-		value:   v,
+		value:   value,
 	}
 }
 
 func (c ConversionError) Error() string {
+	var t string
+	switch c.value.(type) {
+	case nil:
+	case json.Number:
+		t = "number"
+	default:
+		t = reflect.TypeOf(c.value).String()
+	}
+
 	msg := fmt.Sprintf(`cannot unmarshal "%+v" `, c.value)
 
-	if c.typ != nil {
-		msg = fmt.Sprintf(`%stype "%s" `, msg, c.typ)
+	if t != "" {
+		msg = fmt.Sprintf(`%stype "%s" `, msg, t)
 	}
 
 	return msg + "into " + c.context.String()

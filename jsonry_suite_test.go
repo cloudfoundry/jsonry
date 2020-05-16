@@ -1,6 +1,7 @@
 package jsonry_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"testing"
@@ -9,21 +10,22 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type pri struct {
-	private bool
-	Public  bool
-}
+type implementsJSONMarshaler struct{ value bool }
 
-type jsm struct{ value bool }
-
-func (j jsm) MarshalJSON() ([]byte, error) {
+func (j implementsJSONMarshaler) MarshalJSON() ([]byte, error) {
 	if j.value {
 		return nil, errors.New("ouch")
 	}
 	return json.Marshal("hello")
 }
 
-type jrm struct{ value bool }
+func (j *implementsJSONMarshaler) UnmarshalJSON(input []byte) error {
+	if bytes.Equal(input, []byte(`"fail"`)) {
+		return errors.New("ouch")
+	}
+	j.value = true
+	return nil
+}
 
 type space struct {
 	Name string `jsonry:"name,omitempty"`
@@ -42,11 +44,14 @@ func (n nullString) MarshalJSON() ([]byte, error) {
 	return json.Marshal(n.value)
 }
 
-func (j jrm) MarshalJSONry() (interface{}, error) {
-	if j.value {
-		return nil, errors.New("ouch")
+func (n *nullString) UnmarshalJSON(input []byte) error {
+	if bytes.Equal(input, []byte("null")) {
+		n.null = true
+		return nil
 	}
-	return &pri{private: true, Public: true}, nil
+
+	n.null = false
+	return json.Unmarshal(input, &n.value)
 }
 
 func TestJSONry(t *testing.T) {

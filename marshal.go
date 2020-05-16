@@ -11,12 +11,6 @@ import (
 	"code.cloudfoundry.org/jsonry/internal/path"
 )
 
-// Marshaler is the interface implemented by types that
-// can marshal themselves into a Go type that JSONry can handle.
-type Marshaler interface {
-	MarshalJSONry() (interface{}, error)
-}
-
 func Marshal(input interface{}) ([]byte, error) {
 	iv := inspectValue(reflect.ValueOf(input))
 
@@ -30,31 +24,6 @@ func Marshal(input interface{}) ([]byte, error) {
 	}
 
 	return json.Marshal(m)
-}
-
-func marshal(ctx context.Context, in reflect.Value) (r interface{}, err error) {
-	input := inspectValue(in)
-
-	switch {
-	case implements(input.typ, (*json.Marshaler)(nil)):
-		r, err = marshalJSONMarshaler(ctx, input.value)
-	case implements(input.typ, (*Marshaler)(nil)):
-		r, err = marshalJSONryMarshaler(ctx, input.value)
-	case basicType(input.kind):
-		r = in.Interface()
-	case input.kind == reflect.Invalid:
-		r = nil
-	case input.kind == reflect.Struct:
-		r, err = marshalStruct(ctx, input.value, input.typ)
-	case input.kind == reflect.Slice || input.kind == reflect.Array:
-		r, err = marshalList(ctx, input.value)
-	case input.kind == reflect.Map:
-		r, err = marshalMap(ctx, input.value)
-	default:
-		err = newUnsupportedTypeError(ctx, input.typ)
-	}
-
-	return
 }
 
 func marshalStruct(ctx context.Context, in reflect.Value, t reflect.Type) (map[string]interface{}, error) {
@@ -77,6 +46,29 @@ func marshalStruct(ctx context.Context, in reflect.Value, t reflect.Type) (map[s
 	}
 
 	return out, nil
+}
+
+func marshal(ctx context.Context, in reflect.Value) (r interface{}, err error) {
+	input := inspectValue(in)
+
+	switch {
+	case implements(input.typ, (*json.Marshaler)(nil)):
+		r, err = marshalJSONMarshaler(ctx, input.value)
+	case basicType(input.kind):
+		r = in.Interface()
+	case input.kind == reflect.Invalid:
+		r = nil
+	case input.kind == reflect.Struct:
+		r, err = marshalStruct(ctx, input.value, input.typ)
+	case input.kind == reflect.Slice || input.kind == reflect.Array:
+		r, err = marshalList(ctx, input.value)
+	case input.kind == reflect.Map:
+		r, err = marshalMap(ctx, input.value)
+	default:
+		err = newUnsupportedTypeError(ctx, input.typ)
+	}
+
+	return
 }
 
 func marshalList(ctx context.Context, in reflect.Value) ([]interface{}, error) {
@@ -130,32 +122,4 @@ func marshalJSONMarshaler(ctx context.Context, in reflect.Value) (interface{}, e
 	}
 
 	return r, nil
-}
-
-func marshalJSONryMarshaler(ctx context.Context, in reflect.Value) (interface{}, error) {
-	t := in.MethodByName("MarshalJSONry").Call(nil)
-
-	if !t[1].IsNil() {
-		return nil, fmt.Errorf("error from MarshaJSONry() call at %s: %w", ctx, toError(t[1]))
-	}
-
-	return marshal(ctx, t[0])
-}
-
-func toError(v reflect.Value) error {
-	if v.CanInterface() {
-		if err, ok := v.Interface().(error); ok {
-			return err
-		}
-		return fmt.Errorf("could not cast to error: %+v", v)
-	}
-	r := v.MethodByName("Error").Call(nil)
-	return fmt.Errorf("%s", r[0])
-}
-
-func implements(t reflect.Type, iptr interface{}) bool {
-	if t == nil {
-		return false
-	}
-	return t.Implements(reflect.TypeOf(iptr).Elem())
 }

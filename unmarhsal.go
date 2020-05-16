@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 
 	"code.cloudfoundry.org/jsonry/internal/path"
 
@@ -13,58 +14,49 @@ import (
 	"code.cloudfoundry.org/jsonry/internal/tree"
 )
 
-func Unmarshal(data []byte, out interface{}) error {
-	output := inspectValue(reflect.ValueOf(out))
+func Unmarshal(data []byte, receiver interface{}) error {
+	target := inspectValue(reflect.ValueOf(receiver))
 
-	if !output.pointer {
-		return errors.New("output must be a pointer to a struct, got a non-pointer")
+	if !target.pointer {
+		return errors.New("receiver must be a pointer to a struct, got a non-pointer")
 	}
-	if output.kind != reflect.Struct {
-		return fmt.Errorf("output must be a pointer to a struct type, got: %s", output.typ)
+	if target.kind != reflect.Struct {
+		return fmt.Errorf("receiver must be a pointer to a struct type, got: %s", target.typ)
 	}
 
-	var target tree.Tree
+	var source map[string]interface{}
 
 	d := json.NewDecoder(bytes.NewBuffer(data))
 	d.UseNumber()
-	if err := d.Decode(&target); err != nil {
+	if err := d.Decode(&source); err != nil {
 		return fmt.Errorf("error parsing JSON: %w", err)
 	}
 
-	return unmarshalIntoStruct(context.Context{}, output.value, output.typ, target)
+	return unmarshalIntoStruct(context.Context{}, target.value, true, source)
 }
 
-func unmarshal(ctx context.Context, target reflect.Value, source interface{}) error {
-	t, k, _ := inspectTarget(target.Type())
-
-	var err error
-	switch {
-	case basicType(k), k == reflect.Interface:
-		err = assign(ctx, target, source)
-	case k == reflect.Struct:
-		if m, ok := source.(map[string]interface{}); ok {
-			err = unmarshalIntoStruct(ctx, target, t, m)
-		} else {
-			panic("no")
-		}
-	case k == reflect.Slice, k == reflect.Array:
-		err = unmarshalIntoSlice(ctx, target, t, source)
-	default:
-		err = newUnsupportedTypeError(ctx, t)
+func unmarshalIntoStruct(ctx context.Context, target reflect.Value, found bool, source interface{}) error {
+	if !found {
+		return nil
 	}
-	return err
-}
 
-func unmarshalIntoStruct(ctx context.Context, target reflect.Value, t reflect.Type, source tree.Tree) error {
+	src, ok := source.(map[string]interface{})
+	if !ok {
+		return newConversionError(ctx, source)
+	}
+
+	if target.Kind() == reflect.Ptr {
+		target = allocate(target)
+	}
+
 	for i := 0; i < target.NumField(); i++ {
-		f := t.Field(i)
+		field := target.Type().Field(i)
 
-		if public(f) {
-			p := path.ComputePath(f)
-			if r, ok := source.Fetch(p); ok {
-				if err := unmarshal(ctx.WithField(f.Name, f.Type), target.Field(i), r); err != nil {
-					return err
-				}
+		if public(field) {
+			p := path.ComputePath(field)
+			s, found := tree.Tree(src).Fetch(p)
+			if err := unmarshal(ctx.WithField(field.Name, field.Type), target.Field(i), found, s); err != nil {
+				return err
 			}
 		}
 	}
@@ -72,96 +64,198 @@ func unmarshalIntoStruct(ctx context.Context, target reflect.Value, t reflect.Ty
 	return nil
 }
 
-func unmarshalIntoSlice(ctx context.Context, target reflect.Value, targetType reflect.Type, source interface{}) error {
-	sv := reflect.ValueOf(source)
-
-	if sv.Kind() != reflect.Slice && sv.Kind() != reflect.Array {
-		sv = reflect.ValueOf([]interface{}{source})
+func unmarshal(ctx context.Context, target reflect.Value, found bool, source interface{}) error {
+	kind := target.Kind()
+	if kind == reflect.Ptr {
+		kind = target.Type().Elem().Kind()
 	}
 
-	result := reflect.MakeSlice(targetType, sv.Len(), sv.Len())
-	for i := 0; i < sv.Len(); i++ {
-		elem := reflect.New(targetType.Elem()).Elem()
-		if err := unmarshal(ctx.WithIndex(i, targetType.Elem()), elem, sv.Index(i).Interface()); err != nil {
+	var err error
+	switch {
+	case implements(reflect.PtrTo(target.Type()), (*json.Unmarshaler)(nil)):
+		err = unmarshalIntoJSONUnmarshaler(ctx, target, found, source)
+	case basicType(kind), kind == reflect.Interface:
+		err = unmarshalInfoLeaf(ctx, target, found, source)
+	case kind == reflect.Struct:
+		err = unmarshalIntoStruct(ctx, target, found, source)
+	case kind == reflect.Slice:
+		err = unmarshalIntoSlice(ctx, target, found, source)
+	case kind == reflect.Map:
+		err = unmarshalIntoMap(ctx, target, found, source)
+	default:
+		err = newUnsupportedTypeError(ctx, target.Type())
+	}
+	return err
+}
+
+func unmarshalInfoLeaf(ctx context.Context, target reflect.Value, found bool, source interface{}) error {
+	if !found {
+		return nil
+	}
+
+	switch target.Kind() {
+	case reflect.Ptr:
+		switch source {
+		case nil:
+			return setZeroValue(target)
+		default:
+			return unmarshalInfoLeaf(ctx, allocate(target), found, source)
+		}
+	case reflect.String:
+		if s, ok := source.(string); ok {
+			target.SetString(s)
+			return nil
+		}
+	case reflect.Bool:
+		if b, ok := source.(bool); ok {
+			target.SetBool(b)
+			return nil
+		}
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if n, ok := source.(json.Number); ok {
+			if i, err := strconv.ParseInt(n.String(), 10, 64); err == nil {
+				target.SetInt(i)
+				return nil
+			}
+		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		if n, ok := source.(json.Number); ok {
+			if i, err := strconv.ParseUint(n.String(), 10, 64); err == nil {
+				target.SetUint(i)
+				return nil
+			}
+		}
+	case reflect.Float32, reflect.Float64:
+		if n, ok := source.(json.Number); ok {
+			if f, err := strconv.ParseFloat(n.String(), 64); err == nil {
+				target.SetFloat(f)
+				return nil
+			}
+		}
+	case reflect.Interface:
+		switch source {
+		case nil:
+			return setZeroValue(target)
+		default:
+			target.Set(reflect.ValueOf(convertNumbers(source)))
+		}
+		return nil
+	}
+
+	return newConversionError(ctx, source)
+}
+
+func unmarshalIntoSlice(ctx context.Context, target reflect.Value, found bool, source interface{}) error {
+	if !found {
+		return nil
+	}
+
+	src, ok := source.([]interface{})
+	if !ok {
+		return newConversionError(ctx, source)
+	}
+
+	targetType := target.Type()
+	if target.Kind() == reflect.Ptr {
+		targetType = target.Type().Elem()
+	}
+
+	slice := reflect.MakeSlice(targetType, len(src), len(src))
+	allocate(target).Set(slice)
+
+	for i := range src {
+		elem := slice.Index(i)
+		if err := unmarshal(ctx.WithIndex(i, elem.Type()), elem, true, src[i]); err != nil {
 			return err
 		}
-		result.Index(i).Set(elem)
-	}
-	target.Set(result)
-	return nil
-}
-
-func assign(ctx context.Context, out reflect.Value, in interface{}) error {
-	inValue := reflect.ValueOf(in)
-	if !inValue.IsValid() || inValue.IsZero() {
-		switch out.Kind() {
-		case reflect.Ptr, reflect.Interface:
-			return nil
-		default:
-			return newConversionError(ctx, in, nil)
-		}
-	}
-
-	inType := inValue.Type()
-	out, outType := depointerify(out)
-
-	switch {
-	case inType == reflect.TypeOf((*json.Number)(nil)).Elem():
-		return assignNumber(ctx, out, outType, in.(json.Number))
-	case inType.AssignableTo(outType):
-		out.Set(inValue)
-		return nil
-	case inType.ConvertibleTo(outType):
-		out.Set(inValue.Convert(outType))
-		return nil
-	default:
-		return newConversionError(ctx, in, inType)
-	}
-}
-
-func assignNumber(ctx context.Context, out reflect.Value, outType reflect.Type, in json.Number) error {
-	switch outType.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		i, err := in.Int64()
-		if err != nil {
-			return newConversionError(ctx, in, nil)
-		}
-		out.Set(reflect.ValueOf(i).Convert(outType))
-
-	case reflect.Float32, reflect.Float64:
-		f, err := in.Float64()
-		if err != nil {
-			return newConversionError(ctx, in, nil)
-		}
-		out.Set(reflect.ValueOf(f).Convert(outType))
-
-	default:
-		return newConversionError(ctx, in, nil)
 	}
 
 	return nil
 }
 
-func depointerify(v reflect.Value) (reflect.Value, reflect.Type) {
-	t := v.Type()
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
-		n := reflect.New(t)
-		v.Set(n)
-		v = n.Elem()
+func unmarshalIntoMap(ctx context.Context, target reflect.Value, found bool, source interface{}) error {
+	targetType := target.Type()
+	if target.Kind() == reflect.Ptr {
+		targetType = target.Type().Elem()
 	}
 
-	return v, t
+	if targetType.Key() != reflect.TypeOf("") {
+		return newUnsupportedKeyTypeError(ctx, targetType.Key())
+	}
+
+	if !found {
+		return nil
+	}
+
+	src, ok := source.(map[string]interface{})
+	if !ok {
+		return newConversionError(ctx, source)
+	}
+
+	m := reflect.MakeMap(targetType)
+	allocate(target).Set(m)
+
+	for k, v := range src {
+		targetValue := reflect.New(targetType.Elem()).Elem()
+		if err := unmarshal(ctx.WithKey(k, targetValue.Type()), targetValue, true, v); err != nil {
+			return err
+		}
+
+		m.SetMapIndex(reflect.ValueOf(k), targetValue)
+	}
+
+	return nil
 }
 
-func inspectTarget(t reflect.Type) (reflect.Type, reflect.Kind, bool) {
-	k := t.Kind()
-	switch k {
-	case reflect.Ptr:
-		pt, pk, _ := inspectTarget(t.Elem())
-		return pt, pk, true
-	default:
-		return t, k, false
+func unmarshalIntoJSONUnmarshaler(ctx context.Context, target reflect.Value, found bool, source interface{}) error {
+	if !found {
+		return nil
 	}
+
+	json, err := json.Marshal(source)
+	if err != nil {
+		return fmt.Errorf("error creating JSON for UnmarshalJSON(): %w", err)
+	}
+
+	elem := reflect.New(target.Type())
+	s := elem.MethodByName("UnmarshalJSON").Call([]reflect.Value{reflect.ValueOf(json)})
+
+	if !s[0].IsNil() {
+		return fmt.Errorf("error from UnmarshalJSON() call at %s: %w", ctx, toError(s[0]))
+	}
+
+	target.Set(elem.Elem())
+	return nil
+}
+
+func setZeroValue(target reflect.Value) error {
+	target.Set(reflect.Zero(target.Type()))
+	return nil
+}
+
+func allocate(target reflect.Value) reflect.Value {
+	if target.Kind() != reflect.Ptr {
+		return target
+	}
+
+	n := reflect.New(target.Type().Elem())
+	target.Set(n)
+	return n.Elem()
+}
+
+func convertNumbers(input interface{}) interface{} {
+	n, ok := input.(json.Number)
+	if !ok {
+		return input
+	}
+
+	if i, err := n.Int64(); err == nil {
+		return int(i)
+	}
+
+	if f, err := n.Float64(); err == nil {
+		return f
+	}
+
+	return n.String()
 }
