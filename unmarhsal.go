@@ -15,13 +15,15 @@ import (
 )
 
 func Unmarshal(data []byte, receiver interface{}) error {
-	target := inspectValue(reflect.ValueOf(receiver))
+	target := reflect.ValueOf(receiver)
 
-	if !target.pointer {
+	if target.Kind() != reflect.Ptr {
 		return errors.New("receiver must be a pointer to a struct, got a non-pointer")
 	}
-	if target.kind != reflect.Struct {
-		return fmt.Errorf("receiver must be a pointer to a struct type, got: %s", target.typ)
+
+	target = target.Elem()
+	if target.Kind() != reflect.Struct {
+		return fmt.Errorf("receiver must be a pointer to a struct type, got: %s", target.Type())
 	}
 
 	var source map[string]interface{}
@@ -32,7 +34,7 @@ func Unmarshal(data []byte, receiver interface{}) error {
 		return fmt.Errorf("error parsing JSON: %w", err)
 	}
 
-	return unmarshalIntoStruct(context.Context{}, target.value, true, source)
+	return unmarshalIntoStruct(context.Context{}, target, true, source)
 }
 
 func unmarshalIntoStruct(ctx context.Context, target reflect.Value, found bool, source interface{}) error {
@@ -72,7 +74,7 @@ func unmarshal(ctx context.Context, target reflect.Value, found bool, source int
 
 	var err error
 	switch {
-	case implements(reflect.PtrTo(target.Type()), (*json.Unmarshaler)(nil)):
+	case reflect.PtrTo(target.Type()).Implements(reflect.TypeOf((*json.Unmarshaler)(nil)).Elem()):
 		err = unmarshalIntoJSONUnmarshaler(ctx, target, found, source)
 	case basicType(kind), kind == reflect.Interface:
 		err = unmarshalInfoLeaf(ctx, target, found, source)
@@ -220,8 +222,8 @@ func unmarshalIntoJSONUnmarshaler(ctx context.Context, target reflect.Value, fou
 	elem := reflect.New(target.Type())
 	s := elem.MethodByName("UnmarshalJSON").Call([]reflect.Value{reflect.ValueOf(json)})
 
-	if !s[0].IsNil() {
-		return fmt.Errorf("error from UnmarshalJSON() call at %s: %w", ctx, toError(s[0]))
+	if err := checkForError(s[0]); err != nil {
+		return fmt.Errorf("error from UnmarshalJSON() call at %s: %w", ctx, err)
 	}
 
 	target.Set(elem.Elem())

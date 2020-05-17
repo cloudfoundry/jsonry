@@ -169,7 +169,21 @@ var _ = Describe("Marshal", func() {
 
 		It("marshals a json.Marshaler", func() {
 			expectToMarshal(struct{ J implementsJSONMarshaler }{J: implementsJSONMarshaler{value: false}}, `{"J":"hello"}`)
+			expectToMarshal(struct{ J *implementsJSONMarshaler }{J: &implementsJSONMarshaler{value: false}}, `{"J":"hello"}`)
 			expectToFail(struct{ J implementsJSONMarshaler }{J: implementsJSONMarshaler{value: true}}, `error from MarshaJSON() call at field "J" (type "jsonry_test.implementsJSONMarshaler"): ouch`)
+		})
+
+		It("marshals from named types and type aliases", func() {
+			type alias = string
+			type named string
+			s := struct {
+				A alias
+				N named
+			}{
+				A: "foo",
+				N: named("bar"),
+			}
+			expectToMarshal(s, `{"A":"foo","N":"bar"}`)
 		})
 	})
 

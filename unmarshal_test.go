@@ -296,6 +296,21 @@ var _ = Describe("Unmarshal", func() {
 
 			expectToFail(&s, `{"S":"fail"}`, `error from UnmarshalJSON() call at field "S" (type "jsonry_test.implementsJSONMarshaler"): ouch`)
 		})
+
+		It("unmarshals into named types and type aliases", func() {
+			type alias = string
+			type named string
+			var s struct {
+				A alias
+				N named
+			}
+			unmarshal(&s, `{"A":"foo","N":"bar"}`)
+			Expect(s.A).To(Equal("foo"))
+			Expect(s.N).To(Equal(named("bar")))
+
+			expectToFail(&s, `{"A":12}`, `cannot unmarshal "12" type "number" into field "A" (type "string")`)
+			expectToFail(&s, `{"N":13}`, `cannot unmarshal "13" type "number" into field "N" (type "jsonry_test.named")`)
+		})
 	})
 
 	Describe("recursive composition", func() {

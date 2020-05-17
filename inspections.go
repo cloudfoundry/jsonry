@@ -1,6 +1,9 @@
 package jsonry
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 func public(field reflect.StructField) bool {
 	return field.PkgPath == ""
@@ -18,35 +21,17 @@ func basicType(k reflect.Kind) bool {
 	}
 }
 
-type valueDetails struct {
-	value   reflect.Value
-	typ     reflect.Type
-	kind    reflect.Kind
-	pointer bool
-}
-
-func inspectValue(v reflect.Value) valueDetails {
-	k := v.Kind()
-	switch k {
-	case reflect.Ptr:
-		r := inspectValue(v.Elem())
-		r.pointer = true
-		return r
-	case reflect.Interface:
-		return inspectValue(v.Elem())
-	case reflect.Invalid:
-		return valueDetails{
-			value:   v,
-			typ:     nil,
-			kind:    k,
-			pointer: false,
-		}
-	default:
-		return valueDetails{
-			value:   v,
-			typ:     v.Type(),
-			kind:    k,
-			pointer: false,
-		}
+func checkForError(v reflect.Value) error {
+	if v.IsNil() {
+		return nil
 	}
+
+	if v.CanInterface() {
+		if err, ok := v.Interface().(error); ok {
+			return err
+		}
+		return fmt.Errorf("could not cast to error: %+v", v)
+	}
+	r := v.MethodByName("Error").Call(nil)
+	return fmt.Errorf("%s", r[0])
 }
