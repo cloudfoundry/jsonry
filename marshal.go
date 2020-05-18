@@ -11,6 +11,15 @@ import (
 	"code.cloudfoundry.org/jsonry/internal/path"
 )
 
+// Marshal converts the specified Go struct into JSON. The input must be a struct or a pointer to a struct.
+// Where a field is optional, the suffix ",omitempty" can be specified. This will mean that the field will
+// be omitted from the JSON output if it is a nil pointer or has zero value for the type.
+// When a field is a slice or an array, a single list hint "[]" may be specified in the JSONry path so that the array
+// is created at the correct position in the JSON output.
+//
+// If a field implements the json.Marshaler interface, then the MarshalJSON() method will be called.
+//
+// The field type can be string, bool, int*, uint*, float*, map, slice, array or struct. JSONry is recursive.
 func Marshal(in interface{}) ([]byte, error) {
 	iv := reflect.Indirect(reflect.ValueOf(in))
 

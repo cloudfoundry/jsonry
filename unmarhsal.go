@@ -14,6 +14,11 @@ import (
 	"code.cloudfoundry.org/jsonry/internal/tree"
 )
 
+// Unmarshal parses the specified JSON into the specified Go struct receiver.
+// The receiver must be a pointer to a Go struct containing only fields of the type:
+// string, bool, int*, uint*, float*, map, slice or struct. JSONry is recursive.
+//
+// If a field implements the json.Unmarshaler interface, then the UnmarshalJSON() method will be called.
 func Unmarshal(data []byte, receiver interface{}) error {
 	target := reflect.ValueOf(receiver)
 
@@ -47,9 +52,7 @@ func unmarshalIntoStruct(ctx context.Context, target reflect.Value, found bool, 
 		return newConversionError(ctx, source)
 	}
 
-	if target.Kind() == reflect.Ptr {
-		target = allocate(target)
-	}
+	target = allocateIfNeeded(target)
 
 	for i := 0; i < target.NumField(); i++ {
 		field := target.Type().Field(i)
@@ -67,10 +70,7 @@ func unmarshalIntoStruct(ctx context.Context, target reflect.Value, found bool, 
 }
 
 func unmarshal(ctx context.Context, target reflect.Value, found bool, source interface{}) error {
-	kind := target.Kind()
-	if kind == reflect.Ptr {
-		kind = target.Type().Elem().Kind()
-	}
+	kind := underlyingType(target).Kind()
 
 	var err error
 	switch {
@@ -101,7 +101,7 @@ func unmarshalInfoLeaf(ctx context.Context, target reflect.Value, found bool, so
 		case nil:
 			return setZeroValue(target)
 		default:
-			return unmarshalInfoLeaf(ctx, allocate(target), found, source)
+			return unmarshalInfoLeaf(ctx, allocateIfNeeded(target), found, source)
 		}
 	case reflect.String:
 		if s, ok := source.(string); ok {
@@ -157,13 +157,8 @@ func unmarshalIntoSlice(ctx context.Context, target reflect.Value, found bool, s
 		return newConversionError(ctx, source)
 	}
 
-	targetType := target.Type()
-	if target.Kind() == reflect.Ptr {
-		targetType = target.Type().Elem()
-	}
-
-	slice := reflect.MakeSlice(targetType, len(src), len(src))
-	allocate(target).Set(slice)
+	slice := reflect.MakeSlice(underlyingType(target), len(src), len(src))
+	allocateIfNeeded(target).Set(slice)
 
 	for i := range src {
 		elem := slice.Index(i)
@@ -176,10 +171,7 @@ func unmarshalIntoSlice(ctx context.Context, target reflect.Value, found bool, s
 }
 
 func unmarshalIntoMap(ctx context.Context, target reflect.Value, found bool, source interface{}) error {
-	targetType := target.Type()
-	if target.Kind() == reflect.Ptr {
-		targetType = target.Type().Elem()
-	}
+	targetType := underlyingType(target)
 
 	if targetType.Key() != reflect.TypeOf("") {
 		return newUnsupportedKeyTypeError(ctx, targetType.Key())
@@ -195,7 +187,7 @@ func unmarshalIntoMap(ctx context.Context, target reflect.Value, found bool, sou
 	}
 
 	m := reflect.MakeMap(targetType)
-	allocate(target).Set(m)
+	allocateIfNeeded(target).Set(m)
 
 	for k, v := range src {
 		targetValue := reflect.New(targetType.Elem()).Elem()
@@ -235,7 +227,7 @@ func setZeroValue(target reflect.Value) error {
 	return nil
 }
 
-func allocate(target reflect.Value) reflect.Value {
+func allocateIfNeeded(target reflect.Value) reflect.Value {
 	if target.Kind() != reflect.Ptr {
 		return target
 	}
@@ -260,4 +252,11 @@ func convertNumbers(input interface{}) interface{} {
 	}
 
 	return n.String()
+}
+
+func underlyingType(v reflect.Value) reflect.Type {
+	if v.Kind() == reflect.Ptr {
+		return v.Type().Elem()
+	}
+	return v.Type()
 }

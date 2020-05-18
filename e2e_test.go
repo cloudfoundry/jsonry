@@ -7,7 +7,7 @@ import (
 )
 
 var _ = Describe("end to end", func() {
-	It("marshals", func() {
+	It("marshals and unmarshals symmetrically", func() {
 		type s struct {
 			Num         float32               `json:"number"`
 			Spaces      []space               `jsonry:"relationships.space.data"`
@@ -86,5 +86,32 @@ var _ = Describe("end to end", func() {
 		err = jsonry.Unmarshal(r, &t)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(t).To(Equal(o))
+	})
+
+	It("produces error messages that point to the cause", func() {
+		type a struct{ A string }
+		var s struct {
+			S map[string][]a
+		}
+		json := `
+		{
+			"S": {
+				"foo": [
+					{"A": "one"},
+					{"A": "two"},
+					{"A": 12}
+				]
+			}
+		}`
+		err := jsonry.Unmarshal([]byte(json), &s)
+		Expect(err).To(
+			MatchError(`cannot unmarshal "12" type "number" into field "A" (type "string") path S["foo"][2].A`),
+			func() string {
+				if err == nil {
+					return "did not error"
+				}
+				return err.Error()
+			},
+		)
 	})
 })
