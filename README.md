@@ -31,3 +31,7 @@ the need to create intermediate Go structures. Check out [the documentation](htt
 
 JSONry started life in the [Cloud Foundry CLI](https://github.com/cloudfoundry/cli) project. It has been extracted so
 that it can be used in other projects too.
+
+More information:
+- [License](./LICENSE)
+- [Releasing](./RELEASING.md)
