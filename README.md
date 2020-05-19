@@ -1,5 +1,6 @@
 [![CI](https://github.com/cloudfoundry/jsonry/workflows/Go/badge.svg)](https://github.com/cloudfoundry/jsonry/actions?query=workflow%3AGo)
-[![GoDoc](https://godoc.org/code.cloudfoundry.org/jsonry?status.png)](https://godoc.org/code.cloudfoundry.org/jsonry)
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/code.cloudfoundry.org/jsonry?tab=doc)
+
 # JSONry
 
 A Go library and notation for converting between a Go `struct` and JSON.
@@ -27,7 +28,7 @@ Will generate the following JSON:
 }
 ```
 The operation is reversible using `Unmarshal()`. The key advantage is that nested JSON can be generated and parsed without
-the need to create intermediate Go structures. Check out [the documentation](https://godoc.org/code.cloudfoundry.org/jsonry) for details.
+the need to create intermediate Go structures. Check out [the documentation](https://pkg.go.dev/code.cloudfoundry.org/jsonry?tab=doc) for details.
 
 JSONry started life in the [Cloud Foundry CLI](https://github.com/cloudfoundry/cli) project. It has been extracted so
 that it can be used in other projects too.
