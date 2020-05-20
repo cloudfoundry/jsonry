@@ -311,6 +311,43 @@ var _ = Describe("Unmarshal", func() {
 			expectToFail(&s, `{"A":12}`, `cannot unmarshal "12" type "number" into field "A" (type "string")`)
 			expectToFail(&s, `{"N":13}`, `cannot unmarshal "13" type "number" into field "N" (type "jsonry_test.named")`)
 		})
+
+		When("unmarshalling null", func() {
+			It("leaves basic types untouched", func() {
+				s := struct {
+					S string
+					T int
+					U uint
+					V float64
+					W bool
+				}{
+					S: "foo",
+					T: -65,
+					U: 12,
+					V: 3.14,
+					W: true,
+				}
+				unmarshal(&s, `{"S": null, "T": null, "U": null, "V": null, "W": null}`)
+				Expect(s.S).To(Equal("foo"))
+				Expect(s.T).To(Equal(-65))
+				Expect(s.U).To(Equal(uint(12)))
+				Expect(s.V).To(Equal(3.14))
+				Expect(s.W).To(BeTrue())
+			})
+
+			It("overwrites a pointer as nil", func() {
+				v := "hello"
+				s := struct{ S *string }{S: &v}
+				unmarshal(&s, `{"S": null}`)
+				Expect(s.S).To(BeNil())
+			})
+
+			It("overwrites an interface{} as nil", func() {
+				s := struct{ S interface{} }{S: "hello"}
+				unmarshal(&s, `{"S": null}`)
+				Expect(s.S).To(BeNil())
+			})
+		})
 	})
 
 	Describe("recursive composition", func() {

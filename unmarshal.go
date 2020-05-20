@@ -104,35 +104,50 @@ func unmarshalInfoLeaf(ctx context.Context, target reflect.Value, found bool, so
 			return unmarshalInfoLeaf(ctx, allocateIfNeeded(target), found, source)
 		}
 	case reflect.String:
-		if s, ok := source.(string); ok {
+		switch s := source.(type) {
+		case string:
 			target.SetString(s)
+			return nil
+		case nil:
 			return nil
 		}
 	case reflect.Bool:
-		if b, ok := source.(bool); ok {
+		switch b := source.(type) {
+		case bool:
 			target.SetBool(b)
+			return nil
+		case nil:
 			return nil
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		if n, ok := source.(json.Number); ok {
+		switch n := source.(type) {
+		case json.Number:
 			if i, err := strconv.ParseInt(n.String(), 10, 64); err == nil {
 				target.SetInt(i)
 				return nil
 			}
+		case nil:
+			return nil
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		if n, ok := source.(json.Number); ok {
+		switch n := source.(type) {
+		case json.Number:
 			if i, err := strconv.ParseUint(n.String(), 10, 64); err == nil {
 				target.SetUint(i)
 				return nil
 			}
+		case nil:
+			return nil
 		}
 	case reflect.Float32, reflect.Float64:
-		if n, ok := source.(json.Number); ok {
+		switch n := source.(type) {
+		case json.Number:
 			if f, err := strconv.ParseFloat(n.String(), 64); err == nil {
 				target.SetFloat(f)
 				return nil
 			}
+		case nil:
+			return nil
 		}
 	case reflect.Interface:
 		switch source {
