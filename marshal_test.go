@@ -204,7 +204,7 @@ var _ = Describe("Marshal", func() {
 	})
 
 	Describe("omitempty", func() {
-		It("omits zero values", func() {
+		It("omits zero values of basic types", func() {
 			s := struct {
 				A string `json:",omitempty"`
 				B string `json:"bee,omitempty"`
@@ -213,6 +213,30 @@ var _ = Describe("Marshal", func() {
 				E string
 			}{}
 			expectToMarshal(s, `{"E":""}`)
+		})
+
+		It("omits zero value structs", func() {
+			type t struct{ A string }
+			s := struct {
+				B t `jsonry:",omitempty"`
+			}{}
+			expectToMarshal(s, `{}`)
+		})
+
+		It("omits empty lists", func() {
+			s := struct {
+				A []string  `jsonry:",omitempty"`
+				D [0]string `jsonry:",omitempty"`
+			}{}
+			expectToMarshal(s, `{}`)
+		})
+
+		It("omits empty maps", func() {
+			s := struct {
+				A map[interface{}]interface{} `jsonry:",omitempty"`
+				D map[int]int                 `jsonry:",omitempty"`
+			}{}
+			expectToMarshal(s, `{}`)
 		})
 
 		It("omits nil pointers", func() {
