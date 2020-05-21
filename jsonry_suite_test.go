@@ -27,11 +27,6 @@ func (j *implementsJSONMarshaler) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
-type space struct {
-	Name string `jsonry:"name,omitempty"`
-	GUID string `jsonry:"guid"`
-}
-
 type nullString struct {
 	value string
 	null  bool

@@ -8,6 +8,11 @@ import (
 
 var _ = Describe("end to end", func() {
 	It("marshals and unmarshals symmetrically", func() {
+		type space struct {
+			Name string `jsonry:"name,omitempty"`
+			GUID string `jsonry:"guid"`
+		}
+
 		type s struct {
 			Num         float32               `json:"number"`
 			Spaces      []space               `jsonry:"relationships.space.data"`
