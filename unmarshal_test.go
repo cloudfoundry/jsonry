@@ -289,12 +289,12 @@ var _ = Describe("Unmarshal", func() {
 			expectToFail(&s, `{}`, `maps must only have string keys for "int" at field "S" (type "map[int]string")`)
 		})
 
-		It("unmarshals a json.Marshaler field", func() {
-			var s struct{ S implementsJSONMarshaler }
+		It("unmarshals into json.Unmarshaler field", func() {
+			var s struct{ S implementsJSONUnmarshaler }
 			unmarshal(&s, `{"S":"ok"}`)
-			Expect(s.S).To(Equal(implementsJSONMarshaler{value: true}))
+			Expect(s.S).To(Equal(implementsJSONUnmarshaler{hasBeenSet: true}))
 
-			expectToFail(&s, `{"S":"fail"}`, `error from UnmarshalJSON() call at field "S" (type "jsonry_test.implementsJSONMarshaler"): ouch`)
+			expectToFail(&s, `{"S":"fail"}`, `error from UnmarshalJSON() call at field "S" (type "jsonry_test.implementsJSONUnmarshaler"): ouch`)
 		})
 
 		It("unmarshals into named types and type aliases", func() {

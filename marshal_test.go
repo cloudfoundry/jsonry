@@ -1,6 +1,8 @@
 package jsonry_test
 
 import (
+	"errors"
+
 	"code.cloudfoundry.org/jsonry"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -168,9 +170,12 @@ var _ = Describe("Marshal", func() {
 		})
 
 		It("marshals a json.Marshaler", func() {
-			expectToMarshal(struct{ J implementsJSONMarshaler }{J: implementsJSONMarshaler{value: false}}, `{"J":"hello"}`)
-			expectToMarshal(struct{ J *implementsJSONMarshaler }{J: &implementsJSONMarshaler{value: false}}, `{"J":"hello"}`)
-			expectToFail(struct{ J implementsJSONMarshaler }{J: implementsJSONMarshaler{value: true}}, `error from MarshaJSON() call at field "J" (type "jsonry_test.implementsJSONMarshaler"): ouch`)
+			expectToMarshal(struct{ I implementsJSONMarshaler }{I: implementsJSONMarshaler{bytes: []byte(`"hello"`)}}, `{"I":"hello"}`)
+			expectToMarshal(struct{ I *implementsJSONMarshaler }{I: &implementsJSONMarshaler{bytes: []byte(`"hello"`)}}, `{"I":"hello"}`)
+			expectToMarshal(struct{ I *implementsJSONMarshaler }{I: (*implementsJSONMarshaler)(nil)}, `{"I":null}`)
+
+			expectToFail(struct{ I implementsJSONMarshaler }{I: implementsJSONMarshaler{err: errors.New("ouch")}}, `error from MarshaJSON() call at field "I" (type "jsonry_test.implementsJSONMarshaler"): ouch`)
+			expectToFail(struct{ I implementsJSONMarshaler }{I: implementsJSONMarshaler{}}, `error parsing MarshaJSON() output "" at field "I" (type "jsonry_test.implementsJSONMarshaler"): unexpected end of JSON input`)
 		})
 
 		It("marshals from named types and type aliases", func() {

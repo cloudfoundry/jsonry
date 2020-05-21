@@ -10,20 +10,24 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type implementsJSONMarshaler struct{ value bool }
-
-func (j implementsJSONMarshaler) MarshalJSON() ([]byte, error) {
-	if j.value {
-		return nil, errors.New("ouch")
-	}
-	return json.Marshal("hello")
+type implementsJSONMarshaler struct {
+	bytes []byte
+	err   error
 }
 
-func (j *implementsJSONMarshaler) UnmarshalJSON(input []byte) error {
+func (i implementsJSONMarshaler) MarshalJSON() ([]byte, error) {
+	return i.bytes, i.err
+}
+
+type implementsJSONUnmarshaler struct {
+	hasBeenSet bool
+}
+
+func (i *implementsJSONUnmarshaler) UnmarshalJSON(input []byte) error {
 	if bytes.Equal(input, []byte(`"fail"`)) {
 		return errors.New("ouch")
 	}
-	j.value = true
+	i.hasBeenSet = true
 	return nil
 }
 
