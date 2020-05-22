@@ -7,6 +7,8 @@
 A Go library and notation for converting between a Go `struct` and JSON.
 
 ```go
+import "code.cloudfoundry.org/jsonry"
+
 s := struct {
   GUID string `jsonry:"relationships.space.data.guid"`
 }{
