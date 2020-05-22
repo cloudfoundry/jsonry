@@ -220,8 +220,6 @@ var _ = Describe("Marshal", func() {
 			expectToMarshal(s, `{}`)
 		})
 
-		//		and any empty array, slice, map, or string.
-
 		It("omits false", func() {
 			s := struct {
 				A bool `jsonry:",omitempty"`
