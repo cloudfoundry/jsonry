@@ -1,6 +1,7 @@
 package jsonry_test
 
 import (
+	"encoding/json"
 	"errors"
 
 	"code.cloudfoundry.org/jsonry"
@@ -209,30 +210,70 @@ var _ = Describe("Marshal", func() {
 	})
 
 	Describe("omitempty", func() {
-		It("omits zero values of basic types", func() {
+		It("reads the `omitempty` field from JSON and JSONry tags with and without names", func() {
 			s := struct {
 				A string `json:",omitempty"`
 				B string `json:"bee,omitempty"`
 				C string `jsonry:",omitempty"`
 				D string `jsonry:"dee,omitempty"`
-				E string
-			}{}
-			expectToMarshal(s, `{"E":""}`)
-		})
-
-		It("omits zero value structs", func() {
-			type t struct{ A string }
-			s := struct {
-				B t `jsonry:",omitempty"`
 			}{}
 			expectToMarshal(s, `{}`)
 		})
 
-		It("omits empty lists", func() {
+		//		and any empty array, slice, map, or string.
+
+		It("omits false", func() {
 			s := struct {
-				A []string  `jsonry:",omitempty"`
-				D [0]string `jsonry:",omitempty"`
+				A bool `jsonry:",omitempty"`
 			}{}
+			expectToMarshal(s, `{}`)
+		})
+
+		It("omits 0", func() {
+			s := struct {
+				A int     `jsonry:",omitempty"`
+				B uint    `jsonry:",omitempty"`
+				C float64 `jsonry:",omitempty"`
+			}{}
+			expectToMarshal(s, `{}`)
+		})
+
+		It("omits nil pointers", func() {
+			type t struct{ A string }
+			s := struct {
+				A *string      `jsonry:",omitempty"`
+				B *t           `jsonry:",omitempty"`
+				C *[]string    `jsonry:",omitempty"`
+				D *map[int]int `jsonry:",omitempty"`
+				E *interface{} `jsonry:",omitempty"`
+			}{}
+			expectToMarshal(s, `{}`)
+		})
+
+		It("omits nil interface values", func() {
+			s := struct {
+				A interface{}    `jsonry:",omitempty"`
+				B json.Marshaler `jsonry:",omitempty"`
+			}{}
+			expectToMarshal(s, `{}`)
+		})
+
+		It("omits empty arrays", func() {
+			s := struct {
+				A [0]int `jsonry:",omitempty"`
+			}{A: [0]int{}}
+			expectToMarshal(s, `{}`)
+		})
+
+		It("omits empty slices", func() {
+			s := struct {
+				A []int `jsonry:",omitempty"`
+				B []int `jsonry:",omitempty"`
+				C []int `jsonry:",omitempty"`
+			}{
+				B: []int{},
+				C: make([]int, 0, 1),
+			}
 			expectToMarshal(s, `{}`)
 		})
 
@@ -240,19 +281,31 @@ var _ = Describe("Marshal", func() {
 			s := struct {
 				A map[interface{}]interface{} `jsonry:",omitempty"`
 				D map[int]int                 `jsonry:",omitempty"`
-			}{}
+			}{
+				D: make(map[int]int),
+			}
 			expectToMarshal(s, `{}`)
 		})
 
-		It("omits nil pointers", func() {
+		It("omits empty strings", func() {
 			s := struct {
-				A *string `json:",omitempty"`
-				B *string `json:"bee,omitempty"`
-				C *string `jsonry:",omitempty"`
-				D *string `jsonry:"dee,omitempty"`
-				E *string
+				A string `jsonry:",omitempty"`
+				B string `jsonry:",omitempty"`
+			}{
+				B: "",
+			}
+			expectToMarshal(s, `{}`)
+		})
+
+		// For consistency with json.Marshal, see https://github.com/golang/go/issues/11939
+		It("does not omit empty structs", func() {
+			type t struct {
+				A string `jsonry:",omitempty"`
+			}
+			s := struct {
+				B t `jsonry:",omitempty"`
 			}{}
-			expectToMarshal(s, `{"E":null}`)
+			expectToMarshal(s, `{"B":{}}`)
 		})
 	})
 
