@@ -256,6 +256,22 @@ var _ = Describe("Marshal", func() {
 		})
 	})
 
+	Describe("omitting struct fields", func() {
+		It("omits struct fields tagged with `-`", func() {
+			type s struct {
+				A string `jsonry:"-"`
+			}
+			expectToMarshal(s{A: "foo"}, `{}`)
+		})
+
+		It("allows literal field name `-` ", func() {
+			type s struct {
+				A string `jsonry:"-,"`
+			}
+			expectToMarshal(s{A: "foo"}, `{"-":"foo"}`)
+		})
+	})
+
 	Describe("inputs", func() {
 		It("accept a struct", func() {
 			var s struct{}

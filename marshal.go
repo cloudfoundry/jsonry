@@ -44,7 +44,9 @@ func marshalStruct(ctx context.Context, in reflect.Value) (map[string]interface{
 
 		if public(f) {
 			p := path.ComputePath(f)
-			if !p.OmitEmpty || !in.Field(i).IsZero() {
+			shouldSkip := p.OmitAlways || (p.OmitEmpty && in.Field(i).IsZero())
+
+			if !shouldSkip {
 				r, err := marshal(ctx.WithField(f.Name, f.Type), in.Field(i))
 				if err != nil {
 					return nil, err

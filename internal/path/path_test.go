@@ -51,4 +51,26 @@ var _ = Describe("Path", func() {
 			Expect(p.OmitEmpty).To(BeTrue())
 		})
 	})
+
+	Context("always omit", func() {
+		It("picks it up from a JSON tag", func() {
+			p := path.ComputePath(reflect.StructField{Tag: `json:"-"`})
+			Expect(p.OmitAlways).To(BeTrue())
+		})
+
+		It("picks it up from a JSONry tag", func() {
+			p := path.ComputePath(reflect.StructField{Tag: `jsonry:"-"`})
+			Expect(p.OmitAlways).To(BeTrue())
+		})
+
+		It("allows a literal name `-` from a JSON tag", func() {
+			p := path.ComputePath(reflect.StructField{Tag: `json:"-,"`})
+			Expect(p.OmitAlways).To(BeFalse())
+		})
+
+		It("allows a literal name `-` from a JSONry tag", func() {
+			p := path.ComputePath(reflect.StructField{Tag: `jsonry:"-,"`})
+			Expect(p.OmitAlways).To(BeFalse())
+		})
+	})
 })
