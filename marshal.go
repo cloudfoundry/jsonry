@@ -103,9 +103,12 @@ func marshalList(ctx context.Context, in reflect.Value) ([]interface{}, error) {
 	return out, nil
 }
 
-func marshalMap(ctx context.Context, in reflect.Value) (map[string]interface{}, error) {
-	out := make(map[string]interface{})
+func marshalMap(ctx context.Context, in reflect.Value) (out map[string]interface{}, err error) {
+	if in.IsNil() {
+		return out, nil
+	}
 
+	out = make(map[string]interface{})
 	iter := in.MapRange()
 	for iter.Next() {
 		k := iter.Key()

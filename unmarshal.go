@@ -196,6 +196,10 @@ func unmarshalIntoMap(ctx context.Context, target reflect.Value, found bool, sou
 		return nil
 	}
 
+	if source == nil {
+		return nil
+	}
+
 	src, ok := source.(map[string]interface{})
 	if !ok {
 		return newConversionError(ctx, source)

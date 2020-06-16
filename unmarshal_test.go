@@ -246,42 +246,95 @@ var _ = Describe("Unmarshal", func() {
 			expectToFail(&s, `{}`, `unsupported type "[3]string" at field "S" (type "[3]string")`)
 		})
 
-		It("unmarshals into a map field", func() {
-			var s struct {
-				S map[string]string
-				N map[string]int
-				I map[string]interface{}
-				E map[string]string
-			}
-			unmarshal(&s, `{"S":{"a":"b","c":"d"},"N":{"f":5},"I":{"a":"b","c":5,"d":true}}`)
+		Context("maps", func() {
+			It("unmarshals maps with interface values", func() {
+				By("map", func() {
+					var s struct{ I map[string]interface{} }
+					unmarshal(&s, `{"I":{"a":"b","c":5,"d":true}}`)
+					Expect(s.I).To(Equal(map[string]interface{}{"a": "b", "c": 5, "d": true}))
+				})
 
-			Expect(s).To(MatchAllFields(Fields{
-				"S": Equal(map[string]string{"a": "b", "c": "d"}),
-				"N": Equal(map[string]int{"f": 5}),
-				"I": Equal(map[string]interface{}{"a": "b", "c": 5, "d": true}),
-				"E": BeEmpty(),
-			}))
+				By("pointer", func() {
+					var s struct{ I *map[string]interface{} }
+					unmarshal(&s, `{"I":{"a":"b","c":5,"d":true}}`)
+					Expect(s.I).To(PointTo(Equal(map[string]interface{}{"a": "b", "c": 5, "d": true})))
+				})
+			})
 
-			expectToFail(&s, `{"S":"foo"}`, `cannot unmarshal "foo" type "string" into field "S" (type "map[string]string")`)
-		})
+			It("unmarshals maps with string values", func() {
+				By("map", func() {
+					var s struct{ S map[string]string }
+					unmarshal(&s, `{"S":{"a":"b","c":"d"}}`)
+					Expect(s.S).To(Equal(map[string]string{"a": "b", "c": "d"}))
+				})
 
-		It("unmarshals into a map pointer field", func() {
-			var s struct {
-				S *map[string]string
-				N *map[string]int
-				I *map[string]interface{}
-				E *map[string]string
-			}
-			unmarshal(&s, `{"S":{"a":"b","c":"d"},"N":{"f":5},"I":{"a":"b","c":5,"d":true}}`)
+				By("pointer", func() {
+					var s struct{ S *map[string]string }
+					unmarshal(&s, `{"S":{"a":"b","c":"d"}}`)
+					Expect(s.S).To(PointTo(Equal(map[string]string{"a": "b", "c": "d"})))
+				})
+			})
 
-			Expect(s).To(MatchAllFields(Fields{
-				"S": PointTo(Equal(map[string]string{"a": "b", "c": "d"})),
-				"N": PointTo(Equal(map[string]int{"f": 5})),
-				"I": PointTo(Equal(map[string]interface{}{"a": "b", "c": 5, "d": true})),
-				"E": BeNil(),
-			}))
+			It("unmarshals maps with number values", func() {
+				By("map", func() {
+					var s struct{ N map[string]int }
+					unmarshal(&s, `{"N":{"f":5}}`)
+					Expect(s.N).To(Equal(map[string]int{"f": 5}))
+				})
 
-			expectToFail(&s, `{"S":"foo"}`, `cannot unmarshal "foo" type "string" into field "S" (type "*map[string]string")`)
+				By("pointer", func() {
+					var s struct{ N *map[string]int }
+					unmarshal(&s, `{"N":{"f":5}}`)
+					Expect(s.N).To(PointTo(Equal(map[string]int{"f": 5})))
+				})
+			})
+
+			It("unmarshals omitted maps", func() {
+				By("map", func() {
+					var s struct{ I map[string]interface{} }
+					unmarshal(&s, `{}`)
+					Expect(s.I).To(BeNil())
+					Expect(s.I).To(BeEmpty())
+				})
+
+				By("pointer", func() {
+					var s struct{ I *map[string]interface{} }
+					unmarshal(&s, `{}`)
+					Expect(s.I).To(BeNil())
+				})
+			})
+
+			It("unmarshals null maps", func() {
+				By("map", func() {
+					var s struct{ I map[string]interface{} }
+					unmarshal(&s, `{"I": null}`)
+					Expect(s.I).To(BeNil())
+					Expect(s.I).To(BeEmpty())
+				})
+
+				By("pointer", func() {
+					var s struct{ I *map[string]interface{} }
+					unmarshal(&s, `{"I": null}`)
+					Expect(s.I).To(BeNil())
+				})
+			})
+
+			It("unmarshals empty maps", func() {
+				By("map", func() {
+					var s struct{ I map[string]interface{} }
+					unmarshal(&s, `{"I": {}}`)
+					Expect(s.I).NotTo(BeNil())
+					Expect(s.I).To(BeEmpty())
+				})
+
+				By("pointer", func() {
+					var s struct{ I *map[string]interface{} }
+					unmarshal(&s, `{"I": {}}`)
+					Expect(s.I).NotTo(BeNil())
+					Expect(s.I).To(PointTo(Not(BeNil())))
+					Expect(s.I).To(PointTo(BeEmpty()))
+				})
+			})
 		})
 
 		It("rejects an map field that does not have string keys", func() {

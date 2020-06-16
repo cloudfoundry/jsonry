@@ -157,17 +157,34 @@ var _ = Describe("Marshal", func() {
 			}{S: &s}, `{"S":["hello",true,42]}`)
 		})
 
-		It("marshals a map", func() {
-			mi := map[string]interface{}{"foo": "hello", "bar": true, "baz": 42}
-			ms := map[string]string{"foo": "hello", "bar": "true", "baz": "42"}
-			mn := map[int]interface{}{4: 3}
+		Context("maps", func() {
+			It("marshals maps with interface values", func() {
+				mi := map[string]interface{}{"foo": "hello", "bar": true, "baz": 42}
+				expectToMarshal(struct{ M map[string]interface{} }{M: mi}, `{"M":{"foo":"hello","bar":true,"baz":42}}`)
+				expectToMarshal(struct{ M *map[string]interface{} }{M: &mi}, `{"M":{"foo":"hello","bar":true,"baz":42}}`)
+			})
 
-			expectToMarshal(struct{ M map[string]interface{} }{M: mi}, `{"M":{"foo":"hello","bar":true,"baz":42}}`)
-			expectToMarshal(struct{ M *map[string]interface{} }{M: &mi}, `{"M":{"foo":"hello","bar":true,"baz":42}}`)
-			expectToMarshal(struct{ M map[string]string }{M: ms}, `{"M":{"foo":"hello","bar":"true","baz":"42"}}`)
-			expectToMarshal(struct{ M *map[string]string }{M: &ms}, `{"M":{"foo":"hello","bar":"true","baz":"42"}}`)
+			It("marshals maps with string values", func() {
+				ms := map[string]string{"foo": "hello", "bar": "true", "baz": "42"}
+				expectToMarshal(struct{ M map[string]string }{M: ms}, `{"M":{"foo":"hello","bar":"true","baz":"42"}}`)
+				expectToMarshal(struct{ M *map[string]string }{M: &ms}, `{"M":{"foo":"hello","bar":"true","baz":"42"}}`)
+			})
 
-			expectToFail(struct{ M map[int]interface{} }{M: mn}, `maps must only have string keys for "map[int]interface {}" at field "M" (type "map[int]interface {}")`)
+			It("marshals empty maps", func() {
+				me := make(map[string]string)
+				expectToMarshal(struct{ M map[string]string }{M: me}, `{"M":{}}`)
+				expectToMarshal(struct{ M *map[string]string }{M: &me}, `{"M":{}}`)
+			})
+
+			It("marshals nil maps", func() {
+				expectToMarshal(struct{ M map[string]string }{}, `{"M":null}`)
+				expectToMarshal(struct{ M *map[string]string }{}, `{"M":null}`)
+			})
+
+			It("fails with invalid keys", func() {
+				mn := map[int]interface{}{4: 3}
+				expectToFail(struct{ M map[int]interface{} }{M: mn}, `maps must only have string keys for "map[int]interface {}" at field "M" (type "map[int]interface {}")`)
+			})
 		})
 
 		It("marshals a json.Marshaler", func() {
