@@ -141,14 +141,6 @@ var _ = Describe("Marshal", func() {
 			expectToMarshal(struct{ P, p string }{P: "foo", p: "bar"}, `{"P":"foo"}`)
 		})
 
-		It("marshals a slice", func() {
-			s := []interface{}{"hello", true, 42}
-			expectToMarshal(struct{ S []interface{} }{S: s}, `{"S":["hello",true,42]}`)
-			expectToMarshal(struct {
-				S *[]interface{}
-			}{S: &s}, `{"S":["hello",true,42]}`)
-		})
-
 		It("marshals an array", func() {
 			s := [3]interface{}{"hello", true, 42}
 			expectToMarshal(struct{ S [3]interface{} }{S: s}, `{"S":["hello",true,42]}`)
@@ -157,8 +149,34 @@ var _ = Describe("Marshal", func() {
 			}{S: &s}, `{"S":["hello",true,42]}`)
 		})
 
+		Context("slices", func() {
+			It("marshals slices with interface{} values", func() {
+				s := []interface{}{"hello", true, 42}
+				expectToMarshal(struct{ S []interface{} }{S: s}, `{"S":["hello",true,42]}`)
+				expectToMarshal(struct{ S *[]interface{} }{S: &s}, `{"S":["hello",true,42]}`)
+			})
+
+			It("marshals slices with string values", func() {
+				s := []string{"hello", "true", "42"}
+				expectToMarshal(struct{ S []string }{S: s}, `{"S":["hello","true","42"]}`)
+				expectToMarshal(struct{ S *[]string }{S: &s}, `{"S":["hello","true","42"]}`)
+			})
+
+			It("marshals empty slices", func() {
+				s := make([]string, 0)
+				expectToMarshal(struct{ S []string }{S: s}, `{"S":[]}`)
+				expectToMarshal(struct{ S *[]string }{S: &s}, `{"S":[]}`)
+			})
+
+			It("marshals nil slices", func() {
+				var s []string
+				expectToMarshal(struct{ S []string }{S: s}, `{"S":null}`)
+				expectToMarshal(struct{ S *[]string }{S: &s}, `{"S":null}`)
+			})
+		})
+
 		Context("maps", func() {
-			It("marshals maps with interface values", func() {
+			It("marshals maps with interface{} values", func() {
 				mi := map[string]interface{}{"foo": "hello", "bar": true, "baz": 42}
 				expectToMarshal(struct{ M map[string]interface{} }{M: mi}, `{"M":{"foo":"hello","bar":true,"baz":42}}`)
 				expectToMarshal(struct{ M *map[string]interface{} }{M: &mi}, `{"M":{"foo":"hello","bar":true,"baz":42}}`)

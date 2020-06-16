@@ -88,16 +88,19 @@ func marshal(ctx context.Context, in reflect.Value) (r interface{}, err error) {
 	return
 }
 
-func marshalList(ctx context.Context, in reflect.Value) ([]interface{}, error) {
-	var out []interface{}
+func marshalList(ctx context.Context, in reflect.Value) (out []interface{}, err error) {
+	if in.Type().Kind() == reflect.Slice && in.IsNil() {
+		return out, nil
+	}
 
+	out = make([]interface{}, in.Len())
 	for i := 0; i < in.Len(); i++ {
 		ctx := ctx.WithIndex(i, in.Type())
 		r, err := marshal(ctx, in.Index(i))
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, r)
+		out[i] = r
 	}
 
 	return out, nil

@@ -214,36 +214,100 @@ var _ = Describe("Unmarshal", func() {
 			expectToFail(&s, `{"J":"foo"}`, `cannot unmarshal "foo" type "string" into field "J" (type "*int")`)
 		})
 
-		It("unmarshals into a slice field", func() {
-			var s struct {
-				S []string
-				N []int
-				I []interface{}
-				E []string
-			}
-			unmarshal(&s, `{"S":["a","b","c"],"N":[1,2,3],"I":["a",2,true]}`)
-
-			Expect(s).To(MatchAllFields(Fields{
-				"S": Equal([]string{"a", "b", "c"}),
-				"N": Equal([]int{1, 2, 3}),
-				"I": Equal([]interface{}{"a", 2, true}),
-				"E": BeEmpty(),
-			}))
-
-			expectToFail(&s, `{"S":"foo"}`, `cannot unmarshal "foo" type "string" into field "S" (type "[]string")`)
-		})
-
-		It("unmarshals into a slice pointer field", func() {
-			var s struct{ S *[]string }
-			unmarshal(&s, `{"S":["a","b","c"]}`)
-			Expect(s.S).To(PointTo(Equal([]string{"a", "b", "c"})))
-
-			expectToFail(&s, `{"S":"foo"}`, `cannot unmarshal "foo" type "string" into field "S" (type "*[]string")`)
-		})
-
 		It("rejects an array field", func() {
 			var s struct{ S [3]string }
 			expectToFail(&s, `{}`, `unsupported type "[3]string" at field "S" (type "[3]string")`)
+		})
+
+		Context("slices", func() {
+			It("unmarshals into slices of interface{}", func() {
+				By("slice", func() {
+					var s struct{ I []interface{} }
+					unmarshal(&s, `{"I": ["a",2,true]}`)
+					Expect(s.I).To(Equal([]interface{}{"a", 2, true}))
+				})
+
+				By("pointer", func() {
+					var s struct{ I *[]interface{} }
+					unmarshal(&s, `{"I": ["a",2,true]}`)
+					Expect(s.I).To(PointTo(Equal([]interface{}{"a", 2, true})))
+				})
+			})
+
+			It("unmarshals into slices of string", func() {
+				By("slice", func() {
+					var s struct{ S []string }
+					unmarshal(&s, `{"S":["a","b","c"]}`)
+					Expect(s.S).To(Equal([]string{"a", "b", "c"}))
+				})
+
+				By("pointer", func() {
+					var s struct{ S *[]string }
+					unmarshal(&s, `{"S":["a","b","c"]}`)
+					Expect(s.S).To(PointTo(Equal([]string{"a", "b", "c"})))
+				})
+			})
+
+			It("unmarshals into slices of int", func() {
+				By("slice", func() {
+					var s struct{ N []int }
+					unmarshal(&s, `{"N":[1,2,3]}`)
+					Expect(s.N).To(Equal([]int{1, 2, 3}))
+				})
+
+				By("pointer", func() {
+					var s struct{ N *[]int }
+					unmarshal(&s, `{"N":[1,2,3]}`)
+					Expect(s.N).To(PointTo(Equal([]int{1, 2, 3})))
+				})
+			})
+
+			It("unmarshals an omitted slice", func() {
+				By("slice", func() {
+					var s struct{ I []interface{} }
+					unmarshal(&s, `{}`)
+					Expect(s.I).To(BeNil())
+					Expect(s.I).To(BeEmpty())
+				})
+
+				By("pointer", func() {
+					var s struct{ I *[]interface{} }
+					unmarshal(&s, `{}`)
+					Expect(s.I).To(BeNil())
+				})
+			})
+
+			It("unmarshals a null slice", func() {
+				By("slice", func() {
+					var s struct{ I []interface{} }
+					unmarshal(&s, `{"I": null}`)
+					Expect(s.I).To(BeNil())
+					Expect(s.I).To(BeEmpty())
+				})
+
+				By("pointer", func() {
+					var s struct{ I *[]interface{} }
+					unmarshal(&s, `{"I": null}`)
+					Expect(s.I).To(BeNil())
+				})
+			})
+
+			It("unmarshals an empty slice", func() {
+				By("slice", func() {
+					var s struct{ I []interface{} }
+					unmarshal(&s, `{"I": []}`)
+					Expect(s.I).NotTo(BeNil())
+					Expect(s.I).To(BeEmpty())
+				})
+
+				By("pointer", func() {
+					var s struct{ I *[]interface{} }
+					unmarshal(&s, `{"I": []}`)
+					Expect(s.I).NotTo(BeNil())
+					Expect(s.I).To(PointTo(Not(BeNil())))
+					Expect(s.I).To(PointTo(BeEmpty()))
+				})
+			})
 		})
 
 		Context("maps", func() {
@@ -335,11 +399,11 @@ var _ = Describe("Unmarshal", func() {
 					Expect(s.I).To(PointTo(BeEmpty()))
 				})
 			})
-		})
 
-		It("rejects an map field that does not have string keys", func() {
-			var s struct{ S map[int]string }
-			expectToFail(&s, `{}`, `maps must only have string keys for "int" at field "S" (type "map[int]string")`)
+			It("rejects an map field that does not have string keys", func() {
+				var s struct{ S map[int]string }
+				expectToFail(&s, `{}`, `maps must only have string keys for "int" at field "S" (type "map[int]string")`)
+			})
 		})
 
 		It("unmarshals into json.Unmarshaler field", func() {
