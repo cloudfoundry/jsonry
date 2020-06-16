@@ -31,6 +31,12 @@ func (i *implementsJSONUnmarshaler) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
+type implementsOmissible string
+
+func (i implementsOmissible) OmitJSONry() bool {
+	return i == "omit"
+}
+
 type nullString struct {
 	value string
 	null  bool

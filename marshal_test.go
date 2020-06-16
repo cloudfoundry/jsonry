@@ -323,6 +323,37 @@ var _ = Describe("Marshal", func() {
 		})
 	})
 
+	Describe("Omissible interface", func() {
+		It("can choose to be marshaled", func() {
+			s := struct {
+				A implementsOmissible
+			}{
+				A: "",
+			}
+			expectToMarshal(s, `{"A": ""}`)
+		})
+
+		It("can choose not to be marshaled", func() {
+			s := struct {
+				A implementsOmissible
+			}{
+				A: "omit",
+			}
+			expectToMarshal(s, `{}`)
+		})
+
+		It("overrides omitempty", func() {
+			s := struct {
+				A implementsOmissible `jsonry:",omitempty"`
+				B string              `jsonry:",omitempty"`
+			}{
+				A: "",
+				B: "",
+			}
+			expectToMarshal(s, `{"A": ""}`)
+		})
+	})
+
 	Describe("inputs", func() {
 		It("accept a struct", func() {
 			var s struct{}
