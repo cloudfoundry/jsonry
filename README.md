@@ -1,5 +1,4 @@
-[![CI](https://github.com/cloudfoundry/jsonry/workflows/Go/badge.svg)](https://github.com/cloudfoundry/jsonry/actions?query=workflow%3AGo)
-[![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=cloudfoundry/jsonry)](https://dependabot.com)
+[![CI](https://github.com/cloudfoundry/jsonry/workflows/Go/badge.svg?branch=main)](https://github.com/cloudfoundry/jsonry/actions?query=workflow%3AGo)
 [![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/code.cloudfoundry.org/jsonry?tab=doc)
 
 # JSONry
