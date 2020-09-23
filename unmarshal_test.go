@@ -452,6 +452,19 @@ var _ = Describe("Unmarshal", func() {
 				Expect(s.W).To(BeTrue())
 			})
 
+			It("leaves struct types untouched", func() {
+				type b struct{ B string }
+
+				s := struct {
+					A b
+				}{
+					A: b{B: "hello"},
+				}
+
+				unmarshal(&s, `{"A": null}`)
+				Expect(s.A.B).To(Equal("hello"))
+			})
+
 			It("overwrites a pointer as nil", func() {
 				v := "hello"
 				s := struct{ S *string }{S: &v}
@@ -492,7 +505,7 @@ var _ = Describe("Unmarshal", func() {
 			unmarshal(&s, `{"T":[{"S":"foo"},{"S":"bar"},{},{"S":"baz"}]}`)
 			Expect(s.T).To(Equal([]t{{S: "foo"}, {S: "bar"}, {}, {S: "baz"}}))
 
-			expectToFail(&s, `{"T":[null]}`, `cannot unmarshal "<nil>" into index 0 (type "jsonry_test.t") path T[0]`)
+			expectToFail(&s, `{"T":[4]}`, `cannot unmarshal "4" type "number" into index 0 (type "jsonry_test.t") path T[0]`)
 		})
 
 		It("unmarshals a map of structs", func() {
