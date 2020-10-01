@@ -400,9 +400,16 @@ var _ = Describe("Unmarshal", func() {
 				})
 			})
 
-			It("rejects an map field that does not have string keys", func() {
+			It("rejects a map field that does not have string keys", func() {
 				var s struct{ S map[int]string }
 				expectToFail(&s, `{}`, `maps must only have string keys for "int" at field "S" (type "map[int]string")`)
+			})
+
+			It("unmarshals a map with keys that are string type definitions", func() {
+				type stringy string
+				var s struct{ S map[stringy]string }
+				unmarshal(&s, `{"S": { "data": "some-data" } }`)
+				Expect(s.S).To(Equal(map[stringy]string{"data": "some-data"}))
 			})
 		})
 

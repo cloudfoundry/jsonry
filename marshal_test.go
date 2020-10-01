@@ -203,6 +203,12 @@ var _ = Describe("Marshal", func() {
 				mn := map[int]interface{}{4: 3}
 				expectToFail(struct{ M map[int]interface{} }{M: mn}, `maps must only have string keys for "map[int]interface {}" at field "M" (type "map[int]interface {}")`)
 			})
+
+			It("marshals a map with keys that are string type definitions", func() {
+				type stringy string
+				me := map[stringy]string{"foo": "hello"}
+				expectToMarshal(struct{ M map[stringy]string }{M: me}, `{"M":{"foo": "hello"}}`)
+			})
 		})
 
 		It("marshals a json.Marshaler", func() {
