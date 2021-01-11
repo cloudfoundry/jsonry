@@ -46,15 +46,16 @@ func marshalStruct(ctx context.Context, in reflect.Value) (map[string]interface{
 		f := t.Field(i)
 
 		if public(f) {
-			p := path.ComputePath(f)
+			path := path.ComputePath(f)
+			val := in.Field(i)
 
-			if shouldMarshal(p, in.Field(i)) {
-				r, err := marshal(ctx.WithField(f.Name, f.Type), in.Field(i))
+			if shouldMarshal(path, val) {
+				r, err := marshal(ctx.WithField(f.Name, f.Type), val)
 				if err != nil {
 					return nil, err
 				}
 
-				out.Attach(p, r)
+				out.Attach(path, r)
 			}
 		}
 	}
