@@ -38,3 +38,4 @@ that it can be used in other projects too.
 More information:
 - [License](./LICENSE)
 - [Releasing](./RELEASING.md)
+- [Performance](./PERFORMANCE.md)
