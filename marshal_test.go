@@ -216,8 +216,8 @@ var _ = Describe("Marshal", func() {
 			expectToMarshal(struct{ I *implementsJSONMarshaler }{I: &implementsJSONMarshaler{bytes: []byte(`"hello"`)}}, `{"I":"hello"}`)
 			expectToMarshal(struct{ I *implementsJSONMarshaler }{I: (*implementsJSONMarshaler)(nil)}, `{"I":null}`)
 
-			expectToFail(struct{ I implementsJSONMarshaler }{I: implementsJSONMarshaler{err: errors.New("ouch")}}, `error from MarshaJSON() call at field "I" (type "jsonry_test.implementsJSONMarshaler"): ouch`)
-			expectToFail(struct{ I implementsJSONMarshaler }{I: implementsJSONMarshaler{}}, `error parsing MarshaJSON() output "" at field "I" (type "jsonry_test.implementsJSONMarshaler"): unexpected end of JSON input`)
+			expectToFail(struct{ I implementsJSONMarshaler }{I: implementsJSONMarshaler{err: errors.New("ouch")}}, `error from MarshalJSON() call at field "I" (type "jsonry_test.implementsJSONMarshaler"): ouch`)
+			expectToFail(struct{ I implementsJSONMarshaler }{I: implementsJSONMarshaler{}}, `error parsing MarshalJSON() output "" at field "I" (type "jsonry_test.implementsJSONMarshaler"): unexpected end of JSON input`)
 		})
 
 		It("marshals from named types and type aliases", func() {
