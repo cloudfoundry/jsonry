@@ -85,8 +85,8 @@ var _ = Describe("Unmarshal", func() {
 
 		It("unmarshals into an int8 field", func() {
 			var s struct{ I int8 }
-			unmarshal(&s, `{"I":42}`)
-			Expect(s.I).To(Equal(int8(42)))
+			unmarshal(&s, `{"I":-42}`)
+			Expect(s.I).To(Equal(int8(-42)))
 
 			expectToFail(&s, `{"I":"foo"}`, `cannot unmarshal "foo" type "string" into field "I" (type "int8")`)
 		})
@@ -101,8 +101,8 @@ var _ = Describe("Unmarshal", func() {
 
 		It("unmarshals into an int32 field", func() {
 			var s struct{ I int32 }
-			unmarshal(&s, `{"I":42}`)
-			Expect(s.I).To(Equal(int32(42)))
+			unmarshal(&s, `{"I":-42}`)
+			Expect(s.I).To(Equal(int32(-42)))
 
 			expectToFail(&s, `{"I":"foo"}`, `cannot unmarshal "foo" type "string" into field "I" (type "int32")`)
 		})
@@ -156,19 +156,21 @@ var _ = Describe("Unmarshal", func() {
 		})
 
 		It("unmarshals into a float32 field", func() {
-			var s struct{ A, B float32 }
-			unmarshal(&s, `{"A":42,"B":4.2}`)
+			var s struct{ A, B, C float32 }
+			unmarshal(&s, `{"A":42,"B":4.2,"C":4.2e5}`)
 			Expect(s.A).To(Equal(float32(42)))
 			Expect(s.B).To(Equal(float32(4.2)))
+			Expect(s.C).To(Equal(float32(420000)))
 
 			expectToFail(&s, `{"A":"foo"}`, `cannot unmarshal "foo" type "string" into field "A" (type "float32")`)
 		})
 
 		It("unmarshals into a float64 field", func() {
-			var s struct{ A, B float64 }
-			unmarshal(&s, `{"A":42,"B":4.2}`)
+			var s struct{ A, B, C float64 }
+			unmarshal(&s, `{"A":42,"B":4.2,"C":4.2e-5}`)
 			Expect(s.A).To(Equal(float64(42)))
 			Expect(s.B).To(Equal(4.2))
+			Expect(s.C).To(Equal(0.000042))
 
 			expectToFail(&s, `{"A":"foo"}`, `cannot unmarshal "foo" type "string" into field "A" (type "float64")`)
 		})

@@ -65,7 +65,7 @@ var _ = Describe("Marshal", func() {
 		})
 
 		It("marshals an int8", func() {
-			expectToMarshal(struct{ I int8 }{I: 42}, `{"I":42}`)
+			expectToMarshal(struct{ I int8 }{I: -42}, `{"I":-42}`)
 		})
 
 		It("marshals an int16", func() {
@@ -73,7 +73,7 @@ var _ = Describe("Marshal", func() {
 		})
 
 		It("marshals an int32", func() {
-			expectToMarshal(struct{ I int32 }{I: 42}, `{"I":42}`)
+			expectToMarshal(struct{ I int32 }{I: -42}, `{"I":-42}`)
 		})
 
 		It("marshals an int64", func() {
@@ -101,11 +101,11 @@ var _ = Describe("Marshal", func() {
 		})
 
 		It("marshals a float32", func() {
-			expectToMarshal(struct{ F float32 }{F: 4.2}, `{"F":4.2}`)
+			expectToMarshal(struct{ E, F float32 }{E: 4.2e15, F: 4.2}, `{"E":4.2e15,"F":4.2}`)
 		})
 
 		It("marshals a float64", func() {
-			expectToMarshal(struct{ F float64 }{F: 4.2}, `{"F":4.2}`)
+			expectToMarshal(struct{ E, F float64 }{E: 4.2e-15, F: 4.2}, `{"E":4.2e-15,"F":4.2}`)
 		})
 
 		It("does not marshal a complex64", func() {
