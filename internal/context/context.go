@@ -1,3 +1,4 @@
+// Package context represents a marshalling or unmarshalling call stack for use in error messages
 package context
 
 import (
