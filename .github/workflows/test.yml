@@ -14,4 +14,4 @@ jobs:
       with:
         go-version: ${{ matrix.version }}
     - uses: actions/checkout@v2
-    - run: ./test.sh
+    - run: make test
