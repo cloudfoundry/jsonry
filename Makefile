@@ -4,7 +4,7 @@
 
 .PHONY: help
 
-help:  ## list Makefile targets
+help: ## list Makefile targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 ###### Targets ################################################################
@@ -21,11 +21,14 @@ vet: ## Run static code analysis
 ginkgo: ## Run tests using Ginkgo
 	go run github.com/onsi/ginkgo/ginkgo -r
 
-fmt: ## Checks that the code is formatted correcty
-	@@if [ -n "$$(gofmt -s -e -l -d .)" ]; then                   \
-		echo "gofmt check failed: run 'gofmt -d -e -l -w .'"; \
+fmt: ## Checks that the code is formatted correctly
+	@@if [ -n "$$(gofmt -s -e -l -d .)" ]; then               \
+		echo "gofmt check failed: run 'gofmt -s -e -l -w .'"; \
 		exit 1;                                               \
 	fi
+
+perf: version ## Run performance benchmarks
+	go test -run none -bench . -benchmem -benchtime 10s
 
 version: ## Display the version of Go
 	@@go version
