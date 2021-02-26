@@ -58,7 +58,7 @@ func (t *Tokenizer) keyword(tokenType TokenType, keyword keyword) (Token, error)
 				keyword:  keyword,
 				actual:   actual,
 				expect:   expect,
-				position: t.position + index,
+				position: t.position,
 			}
 		}
 	}
@@ -68,7 +68,7 @@ func (t *Tokenizer) keyword(tokenType TokenType, keyword keyword) (Token, error)
 			keyword:  keyword,
 			actual:   ' ',
 			expect:   keyword[len(t.Data)-t.position],
-			position: len(t.Data),
+			position: t.position,
 		}
 	}
 

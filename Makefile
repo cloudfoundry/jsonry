@@ -21,8 +21,8 @@ vet: ## Run static code analysis
 ginkgo: ## Run tests using Ginkgo
 	go run github.com/onsi/ginkgo/ginkgo -r
 
-fmt: ## Checks that the code is formatted correcty
-	@@if [ -n "$$(gofmt -s -e -l -d .)" ]; then                   \
+fmt: ## Checks that the code is formatted correctly
+	@@if [ -n "$$(gofmt -s -e -l -d .)" ]; then               \
 		echo "gofmt check failed: run 'gofmt -d -e -l -w .'"; \
 		exit 1;                                               \
 	fi

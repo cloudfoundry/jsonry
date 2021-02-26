@@ -1,13 +1,13 @@
 package jsonry
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
 
+	"code.cloudfoundry.org/jsonry/internal/parser"
 	"code.cloudfoundry.org/jsonry/internal/path"
 
 	"code.cloudfoundry.org/jsonry/internal/context"
@@ -31,12 +31,19 @@ func Unmarshal(data []byte, receiver interface{}) error {
 		return fmt.Errorf("receiver must be a pointer to a struct type, got: %s", target.Type())
 	}
 
-	var source map[string]interface{}
-
-	d := json.NewDecoder(bytes.NewBuffer(data))
-	d.UseNumber()
-	if err := d.Decode(&source); err != nil {
-		return fmt.Errorf("error parsing JSON: %w", err)
+	//var source map[string]interface{}
+	//
+	//d := json.NewDecoder(bytes.NewBuffer(data))
+	//d.UseNumber()
+	//if err := d.Decode(&source); err != nil {
+	//	return fmt.Errorf("error parsing JSON: %w", err)
+	//}
+	source, err := parser.Parse(data)
+	if err != nil {
+		return err
+	}
+	if _, ok := source.(map[string]interface{}); !ok {
+		return nil
 	}
 
 	return unmarshalIntoStruct(context.Context{}, target, true, source)

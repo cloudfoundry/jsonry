@@ -161,10 +161,10 @@ var _ = Describe("Tokenizer", func() {
 				Expect(err).To(BeAssignableToTypeOf(tokenizer.InvalidKeywordError{}))
 				Expect(err.(tokenizer.InvalidKeywordError).Position()).To(Equal(position))
 			},
-			Entry("null", "nut", "null", "l", "t", 2),
-			Entry("true", "truy", "true", "e", "y", 3),
-			Entry("false", "fAlse", "false", "a", "A", 1),
-			Entry("short", "fals", "false", "e", " ", 4),
+			Entry("null", " nut", "null", "l", "t", 1),
+			Entry("true", "  truy", "true", "e", "y", 2),
+			Entry("false", "fAlse", "false", "a", "A", 0),
+			Entry("short", "  fals", "false", "e", " ", 2),
 		)
 	})
 })

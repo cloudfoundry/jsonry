@@ -69,7 +69,7 @@ func ExampleUnmarshal() {
       "relationships": {
         "space": {
           "data": {
-            "guid":"267758c0-985b-11ea-b9ac-48bf6bec2d78"}
+            "guid":"267758c0-985b-11ea-b9ac-48bf6bec2d78"
           }
         }
       }
