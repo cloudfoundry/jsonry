@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	. "github.com/onsi/gomega/gstruct"
-
 	"code.cloudfoundry.org/jsonry"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
 )
 
 var _ = Describe("Unmarshal", func() {

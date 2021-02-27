@@ -1,4 +1,4 @@
-package context_test
+package errorcontext_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestContext(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "JSONry Internal Context Suite")
+	RunSpecs(t, "JSONry Internal ErrorContext Suite")
 }
