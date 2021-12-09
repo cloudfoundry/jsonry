@@ -24,3 +24,15 @@ jobs:
     - uses: actions/checkout@v2
     - run: make fmt
     - run: make vet
+  automerge:
+    needs: [test, lint]
+    uses: actions/github-script@v5
+    with:
+      github-token: ${{secrets.GITHUB_TOKEN}}
+      script: |
+        github.rest.pulls.merge({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          pull_numner: context.issue.number,
+          merge_method: 'squash'
+        })
