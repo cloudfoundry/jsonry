@@ -6,7 +6,7 @@ import (
 
 	"code.cloudfoundry.org/jsonry/internal/path"
 	"code.cloudfoundry.org/jsonry/internal/tree"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
