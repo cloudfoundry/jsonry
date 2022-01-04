@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"code.cloudfoundry.org/jsonry/internal/errorcontext"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
