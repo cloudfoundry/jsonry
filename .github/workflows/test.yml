@@ -1,6 +1,13 @@
 name: test
 
-on: [push, pull_request]
+on:
+  workflow_call:
+    outputs:
+      pr_number:
+        description: "The PR number"
+        value: ${{ jobs.test.outputs.pr_number }}
+  push:
+  pull_request:
 
 jobs:
   test-go-1-17:
@@ -21,16 +28,7 @@ jobs:
     - run: make test
   automerge:
     needs: test-go-1-16
-    runs-on: ubuntu-latest
-    if: ${{ success() && github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]' }}
-    steps:
-    - uses: actions/github-script@v5
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        script: |
-          github.rest.pulls.merge({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_numner: context.issue.number,
-            merge_method: 'squash'
-          })
+    if: ${{ success() && github.actor == 'dependabot[bot]' }}
+    uses: cloudfoundry/jsonry/.github/workflows/dependabot-merge.yml
+    with:
+      pr_number: ${{ github.event.number }}
