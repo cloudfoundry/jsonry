@@ -1,34 +1,22 @@
 name: test
 
-on:
-  workflow_call:
-    outputs:
-      pr_number:
-        description: "The PR number"
-        value: ${{ jobs.test.outputs.pr_number }}
-  push:
-  pull_request:
+on: [push, pull_request]
 
 jobs:
   test-go-1-17:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/setup-go@v2
-      with:
-        go-version: '1.17'
-    - uses: actions/checkout@v2
-    - run: make ginkgo
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.17'
+      - uses: actions/checkout@v2
+      - run: make ginkgo
   test-go-1-16:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/setup-go@v2
-      with:
-        go-version: '1.16'
-    - uses: actions/checkout@v2
-    - run: make test
-  automerge:
-    needs: test-go-1-16
-    if: ${{ success() && github.actor == 'dependabot[bot]' }}
-    uses: cloudfoundry/jsonry/.github/workflows/dependabot-merge.yml
-    with:
-      pr_number: ${{ github.event.number }}
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.16'
+      - uses: actions/checkout@v2
+      - run: make test
+
