@@ -6,7 +6,7 @@ jobs:
   test-go-1-16:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: '1.16'
       - uses: actions/checkout@v3
@@ -14,7 +14,7 @@ jobs:
   test-go-1-17:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: '1.17'
       - uses: actions/checkout@v3
@@ -22,7 +22,7 @@ jobs:
   test-go-1-18:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: '1.18'
       - uses: actions/checkout@v3
