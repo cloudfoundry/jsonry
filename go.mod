@@ -3,7 +3,7 @@ module code.cloudfoundry.org/jsonry
 go 1.20
 
 require (
-	github.com/onsi/ginkgo/v2 v2.20.0
+	github.com/onsi/ginkgo/v2 v2.20.1
 	github.com/onsi/gomega v1.34.1
 	honnef.co/go/tools v0.4.7
 )
