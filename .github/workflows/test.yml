@@ -2,23 +2,20 @@ name: test
 on: [push, pull_request]
 jobs:
   test-and-lint:
-    name: Test and Lint on go.mod version
+    name: Test and Lint on lowest supported Go version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version: 'oldstable'
       - run: make test
   test:
+    name: Test on highest supported Go version
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go: [ 'stable', 'oldstable' ]
-    name: Test on Go ${{ matrix.go }}
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go }}
-      - uses: actions/checkout@v4
+          go-version: 'stable'
       - run: make ginkgo
