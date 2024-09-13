@@ -72,7 +72,7 @@ func unmarshal(target reflect.Value, found bool, source interface{}) error {
 
 	var err error
 	switch {
-	case reflect.PtrTo(target.Type()).Implements(reflect.TypeOf((*json.Unmarshaler)(nil)).Elem()):
+	case reflect.PointerTo(target.Type()).Implements(reflect.TypeOf((*json.Unmarshaler)(nil)).Elem()):
 		err = unmarshalIntoJSONUnmarshaler(target, found, source)
 	case basicType(kind), kind == reflect.Interface:
 		err = unmarshalInfoLeaf(target, found, source)
