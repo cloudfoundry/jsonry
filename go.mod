@@ -1,7 +1,8 @@
 module code.cloudfoundry.org/jsonry
 
-go 1.22.1
-toolchain go1.23.6
+go 1.23.0
+
+toolchain go1.24.1
 
 require (
 	github.com/onsi/ginkgo/v2 v2.22.2
