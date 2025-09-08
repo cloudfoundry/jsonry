@@ -45,10 +45,10 @@ func (u unsupportedKeyType) message(ctx errorcontext.ErrorContext) string {
 }
 
 type conversionError struct {
-	value interface{}
+	value any
 }
 
-func newConversionError(value interface{}) error {
+func newConversionError(value any) error {
 	return &conversionError{
 		value: value,
 	}

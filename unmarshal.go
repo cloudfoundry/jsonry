@@ -17,7 +17,7 @@ import (
 // string, bool, int*, uint*, float*, map, slice or struct. JSONry is recursive.
 //
 // If a field implements the json.Unmarshaler interface, then the UnmarshalJSON() method will be called.
-func Unmarshal(data []byte, receiver interface{}) error {
+func Unmarshal(data []byte, receiver any) error {
 	target := reflect.ValueOf(receiver)
 
 	if target.Kind() != reflect.Ptr {
@@ -29,7 +29,7 @@ func Unmarshal(data []byte, receiver interface{}) error {
 		return fmt.Errorf("receiver must be a pointer to a struct type, got: %s", target.Type())
 	}
 
-	var source map[string]interface{}
+	var source map[string]any
 
 	d := json.NewDecoder(bytes.NewBuffer(data))
 	d.UseNumber()
@@ -40,12 +40,12 @@ func Unmarshal(data []byte, receiver interface{}) error {
 	return unmarshalIntoStruct(target, true, source)
 }
 
-func unmarshalIntoStruct(target reflect.Value, found bool, source interface{}) error {
+func unmarshalIntoStruct(target reflect.Value, found bool, source any) error {
 	if !found || source == nil {
 		return nil
 	}
 
-	src, ok := source.(map[string]interface{})
+	src, ok := source.(map[string]any)
 	if !ok {
 		return newConversionError(source)
 	}
@@ -67,7 +67,7 @@ func unmarshalIntoStruct(target reflect.Value, found bool, source interface{}) e
 	return nil
 }
 
-func unmarshal(target reflect.Value, found bool, source interface{}) error {
+func unmarshal(target reflect.Value, found bool, source any) error {
 	kind := underlyingType(target).Kind()
 
 	var err error
@@ -88,7 +88,7 @@ func unmarshal(target reflect.Value, found bool, source interface{}) error {
 	return err
 }
 
-func unmarshalInfoLeaf(target reflect.Value, found bool, source interface{}) error {
+func unmarshalInfoLeaf(target reflect.Value, found bool, source any) error {
 	if !found {
 		return nil
 	}
@@ -160,12 +160,12 @@ func unmarshalInfoLeaf(target reflect.Value, found bool, source interface{}) err
 	return newConversionError(source)
 }
 
-func unmarshalIntoSlice(target reflect.Value, found bool, source interface{}) error {
+func unmarshalIntoSlice(target reflect.Value, found bool, source any) error {
 	if !found || source == nil {
 		return nil
 	}
 
-	src, ok := source.([]interface{})
+	src, ok := source.([]any)
 	if !ok {
 		return newConversionError(source)
 	}
@@ -183,7 +183,7 @@ func unmarshalIntoSlice(target reflect.Value, found bool, source interface{}) er
 	return nil
 }
 
-func unmarshalIntoMap(target reflect.Value, found bool, source interface{}) error {
+func unmarshalIntoMap(target reflect.Value, found bool, source any) error {
 	targetType := underlyingType(target)
 
 	if targetType.Key().Kind() != reflect.String {
@@ -194,7 +194,7 @@ func unmarshalIntoMap(target reflect.Value, found bool, source interface{}) erro
 		return nil
 	}
 
-	src, ok := source.(map[string]interface{})
+	src, ok := source.(map[string]any)
 	if !ok {
 		return newConversionError(source)
 	}
@@ -214,7 +214,7 @@ func unmarshalIntoMap(target reflect.Value, found bool, source interface{}) erro
 	return nil
 }
 
-func unmarshalIntoJSONUnmarshaler(target reflect.Value, found bool, source interface{}) error {
+func unmarshalIntoJSONUnmarshaler(target reflect.Value, found bool, source any) error {
 	if !found {
 		return nil
 	}
@@ -250,7 +250,7 @@ func allocateIfNeeded(target reflect.Value) reflect.Value {
 	return n.Elem()
 }
 
-func convertNumbers(input interface{}) interface{} {
+func convertNumbers(input any) any {
 	n, ok := input.(json.Number)
 	if !ok {
 		return input
