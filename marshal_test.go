@@ -10,13 +10,13 @@ import (
 )
 
 var _ = Describe("Marshal", func() {
-	expectToMarshal := func(input interface{}, expected string) {
+	expectToMarshal := func(input any, expected string) {
 		out, err := jsonry.Marshal(input)
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
 		ExpectWithOffset(1, out).To(MatchJSON(expected))
 	}
 
-	expectToFail := func(input interface{}, message string) {
+	expectToFail := func(input any, message string) {
 		_, err := jsonry.Marshal(input)
 		ExpectWithOffset(1, err).To(MatchError(message), func() string {
 			if err != nil {
@@ -130,7 +130,7 @@ var _ = Describe("Marshal", func() {
 		})
 
 		It("marshals a nil interface", func() {
-			expectToMarshal(struct{ N interface{} }{N: nil}, `{"N":null}`)
+			expectToMarshal(struct{ N any }{N: nil}, `{"N":null}`)
 		})
 
 		It("marshals a nil pointer", func() {
@@ -142,18 +142,18 @@ var _ = Describe("Marshal", func() {
 		})
 
 		It("marshals an array", func() {
-			s := [3]interface{}{"hello", true, 42}
-			expectToMarshal(struct{ S [3]interface{} }{S: s}, `{"S":["hello",true,42]}`)
+			s := [3]any{"hello", true, 42}
+			expectToMarshal(struct{ S [3]any }{S: s}, `{"S":["hello",true,42]}`)
 			expectToMarshal(struct {
-				S *[3]interface{}
+				S *[3]any
 			}{S: &s}, `{"S":["hello",true,42]}`)
 		})
 
 		Context("slices", func() {
 			It("marshals slices with interface{} values", func() {
-				s := []interface{}{"hello", true, 42}
-				expectToMarshal(struct{ S []interface{} }{S: s}, `{"S":["hello",true,42]}`)
-				expectToMarshal(struct{ S *[]interface{} }{S: &s}, `{"S":["hello",true,42]}`)
+				s := []any{"hello", true, 42}
+				expectToMarshal(struct{ S []any }{S: s}, `{"S":["hello",true,42]}`)
+				expectToMarshal(struct{ S *[]any }{S: &s}, `{"S":["hello",true,42]}`)
 			})
 
 			It("marshals slices with string values", func() {
@@ -177,9 +177,9 @@ var _ = Describe("Marshal", func() {
 
 		Context("maps", func() {
 			It("marshals maps with interface{} values", func() {
-				mi := map[string]interface{}{"foo": "hello", "bar": true, "baz": 42}
-				expectToMarshal(struct{ M map[string]interface{} }{M: mi}, `{"M":{"foo":"hello","bar":true,"baz":42}}`)
-				expectToMarshal(struct{ M *map[string]interface{} }{M: &mi}, `{"M":{"foo":"hello","bar":true,"baz":42}}`)
+				mi := map[string]any{"foo": "hello", "bar": true, "baz": 42}
+				expectToMarshal(struct{ M map[string]any }{M: mi}, `{"M":{"foo":"hello","bar":true,"baz":42}}`)
+				expectToMarshal(struct{ M *map[string]any }{M: &mi}, `{"M":{"foo":"hello","bar":true,"baz":42}}`)
 			})
 
 			It("marshals maps with string values", func() {
@@ -200,8 +200,8 @@ var _ = Describe("Marshal", func() {
 			})
 
 			It("fails with invalid keys", func() {
-				mn := map[int]interface{}{4: 3}
-				expectToFail(struct{ M map[int]interface{} }{M: mn}, `maps must only have string keys for "map[int]interface {}" at field "M" (type "map[int]interface {}")`)
+				mn := map[int]any{4: 3}
+				expectToFail(struct{ M map[int]any }{M: mn}, `maps must only have string keys for "map[int]interface {}" at field "M" (type "map[int]interface {}")`)
 			})
 
 			It("marshals a map with keys that are string type definitions", func() {
@@ -284,14 +284,14 @@ var _ = Describe("Marshal", func() {
 				B *t           `jsonry:",omitempty"`
 				C *[]string    `jsonry:",omitempty"`
 				D *map[int]int `jsonry:",omitempty"`
-				E *interface{} `jsonry:",omitempty"`
+				E *any         `jsonry:",omitempty"`
 			}{}
 			expectToMarshal(s, `{}`)
 		})
 
 		It("omits nil interface values", func() {
 			s := struct {
-				A interface{}    `jsonry:",omitempty"`
+				A any            `jsonry:",omitempty"`
 				B json.Marshaler `jsonry:",omitempty"`
 			}{}
 			expectToMarshal(s, `{}`)
@@ -318,8 +318,8 @@ var _ = Describe("Marshal", func() {
 
 		It("omits empty maps", func() {
 			s := struct {
-				A map[interface{}]interface{} `jsonry:",omitempty"`
-				D map[int]int                 `jsonry:",omitempty"`
+				A map[any]any `jsonry:",omitempty"`
+				D map[int]int `jsonry:",omitempty"`
 			}{
 				D: make(map[int]int),
 			}

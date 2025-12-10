@@ -78,7 +78,7 @@ var _ = Describe("Tree", func() {
 
 			v, ok := t.Fetch(p)
 			Expect(ok).To(BeTrue())
-			Expect(v).To(Equal(map[string]interface{}{"d": map[string]interface{}{"e": "hello"}}))
+			Expect(v).To(Equal(map[string]any{"d": map[string]any{"e": "hello"}}))
 		})
 
 		It("can fetch a list at the leaf", func() {
@@ -88,7 +88,7 @@ var _ = Describe("Tree", func() {
 
 			v, ok := t.Fetch(p)
 			Expect(ok).To(BeTrue())
-			Expect(v).To(Equal([]interface{}{"h", "e", "l", "l", "o"}))
+			Expect(v).To(Equal([]any{"h", "e", "l", "l", "o"}))
 		})
 
 		It("can fetch a list at a branch", func() {
@@ -98,7 +98,7 @@ var _ = Describe("Tree", func() {
 
 			v, ok := t.Fetch(p)
 			Expect(ok).To(BeTrue())
-			Expect(v).To(Equal([]interface{}{"h", "i", "!"}))
+			Expect(v).To(Equal([]any{"h", "i", "!"}))
 		})
 
 		It("inserts nils when a list has missing elements", func() {
@@ -108,7 +108,7 @@ var _ = Describe("Tree", func() {
 
 			v, ok := t.Fetch(p)
 			Expect(ok).To(BeTrue())
-			Expect(v).To(Equal([]interface{}{"h", nil, "i", nil, "!"}))
+			Expect(v).To(Equal([]any{"h", nil, "i", nil, "!"}))
 		})
 
 		It("flattens lists of lists", func() {
@@ -118,7 +118,7 @@ var _ = Describe("Tree", func() {
 
 			v, ok := t.Fetch(p)
 			Expect(ok).To(BeTrue())
-			Expect(v).To(Equal([]interface{}{"h", nil, "i", "!"}))
+			Expect(v).To(Equal([]any{"h", nil, "i", "!"}))
 		})
 	})
 })
