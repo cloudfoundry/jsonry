@@ -1,13 +1,11 @@
 module code.cloudfoundry.org/jsonry
 
-go 1.24.0
-
-toolchain go1.24.1
+go 1.25.0
 
 require (
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
-	honnef.co/go/tools v0.6.1
+	honnef.co/go/tools v0.7.0
 )
 
 require (
@@ -25,5 +23,4 @@ require (
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
 	golang.org/x/tools v0.41.0 // indirect
-	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
 )
