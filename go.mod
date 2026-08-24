@@ -1,11 +1,11 @@
 module code.cloudfoundry.org/jsonry
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.1
-	honnef.co/go/tools v0.7.0
+	honnef.co/go/tools v0.8.0
 )
 
 require (
