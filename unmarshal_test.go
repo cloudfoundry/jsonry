@@ -11,12 +11,12 @@ import (
 )
 
 var _ = Describe("Unmarshal", func() {
-	unmarshal := func(receiver interface{}, json string) {
+	unmarshal := func(receiver any, json string) {
 		err := jsonry.Unmarshal([]byte(json), receiver)
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	}
 
-	expectToFail := func(receiver interface{}, json, message string) {
+	expectToFail := func(receiver any, json, message string) {
 		err := jsonry.Unmarshal([]byte(json), receiver)
 		ExpectWithOffset(1, err).To(MatchError(message), func() string {
 			if err != nil {
@@ -185,7 +185,7 @@ var _ = Describe("Unmarshal", func() {
 		})
 
 		It("unmarshals into an interface{} field", func() {
-			var s struct{ N, B, S, I, U, F, L, M interface{} }
+			var s struct{ N, B, S, I, U, F, L, M any }
 			unmarshal(&s, `{"N":null,"B":true,"S":"foo","I":-42,"U":12,"F":4.2,"L":[1,2],"M":{"f":"b"}}`)
 			Expect(s).To(MatchAllFields(Fields{
 				"N": BeNil(),
@@ -194,8 +194,8 @@ var _ = Describe("Unmarshal", func() {
 				"I": Equal(-42),
 				"U": Equal(12),
 				"F": Equal(4.2),
-				"L": Equal([]interface{}{json.Number("1"), json.Number("2")}),
-				"M": Equal(map[string]interface{}{"f": "b"}),
+				"L": Equal([]any{json.Number("1"), json.Number("2")}),
+				"M": Equal(map[string]any{"f": "b"}),
 			}))
 		})
 
@@ -223,15 +223,15 @@ var _ = Describe("Unmarshal", func() {
 		Context("slices", func() {
 			It("unmarshals into slices of interface{}", func() {
 				By("slice", func() {
-					var s struct{ I []interface{} }
+					var s struct{ I []any }
 					unmarshal(&s, `{"I": ["a",2,true]}`)
-					Expect(s.I).To(Equal([]interface{}{"a", 2, true}))
+					Expect(s.I).To(Equal([]any{"a", 2, true}))
 				})
 
 				By("pointer", func() {
-					var s struct{ I *[]interface{} }
+					var s struct{ I *[]any }
 					unmarshal(&s, `{"I": ["a",2,true]}`)
-					Expect(s.I).To(PointTo(Equal([]interface{}{"a", 2, true})))
+					Expect(s.I).To(PointTo(Equal([]any{"a", 2, true})))
 				})
 			})
 
@@ -265,14 +265,14 @@ var _ = Describe("Unmarshal", func() {
 
 			It("unmarshals an omitted slice", func() {
 				By("slice", func() {
-					var s struct{ I []interface{} }
+					var s struct{ I []any }
 					unmarshal(&s, `{}`)
 					Expect(s.I).To(BeNil())
 					Expect(s.I).To(BeEmpty())
 				})
 
 				By("pointer", func() {
-					var s struct{ I *[]interface{} }
+					var s struct{ I *[]any }
 					unmarshal(&s, `{}`)
 					Expect(s.I).To(BeNil())
 				})
@@ -280,14 +280,14 @@ var _ = Describe("Unmarshal", func() {
 
 			It("unmarshals a null slice", func() {
 				By("slice", func() {
-					var s struct{ I []interface{} }
+					var s struct{ I []any }
 					unmarshal(&s, `{"I": null}`)
 					Expect(s.I).To(BeNil())
 					Expect(s.I).To(BeEmpty())
 				})
 
 				By("pointer", func() {
-					var s struct{ I *[]interface{} }
+					var s struct{ I *[]any }
 					unmarshal(&s, `{"I": null}`)
 					Expect(s.I).To(BeNil())
 				})
@@ -295,14 +295,14 @@ var _ = Describe("Unmarshal", func() {
 
 			It("unmarshals an empty slice", func() {
 				By("slice", func() {
-					var s struct{ I []interface{} }
+					var s struct{ I []any }
 					unmarshal(&s, `{"I": []}`)
 					Expect(s.I).NotTo(BeNil())
 					Expect(s.I).To(BeEmpty())
 				})
 
 				By("pointer", func() {
-					var s struct{ I *[]interface{} }
+					var s struct{ I *[]any }
 					unmarshal(&s, `{"I": []}`)
 					Expect(s.I).NotTo(BeNil())
 					Expect(s.I).To(PointTo(Not(BeNil())))
@@ -314,15 +314,15 @@ var _ = Describe("Unmarshal", func() {
 		Context("maps", func() {
 			It("unmarshals maps with interface values", func() {
 				By("map", func() {
-					var s struct{ I map[string]interface{} }
+					var s struct{ I map[string]any }
 					unmarshal(&s, `{"I":{"a":"b","c":5,"d":true}}`)
-					Expect(s.I).To(Equal(map[string]interface{}{"a": "b", "c": 5, "d": true}))
+					Expect(s.I).To(Equal(map[string]any{"a": "b", "c": 5, "d": true}))
 				})
 
 				By("pointer", func() {
-					var s struct{ I *map[string]interface{} }
+					var s struct{ I *map[string]any }
 					unmarshal(&s, `{"I":{"a":"b","c":5,"d":true}}`)
-					Expect(s.I).To(PointTo(Equal(map[string]interface{}{"a": "b", "c": 5, "d": true})))
+					Expect(s.I).To(PointTo(Equal(map[string]any{"a": "b", "c": 5, "d": true})))
 				})
 			})
 
@@ -356,14 +356,14 @@ var _ = Describe("Unmarshal", func() {
 
 			It("unmarshals omitted maps", func() {
 				By("map", func() {
-					var s struct{ I map[string]interface{} }
+					var s struct{ I map[string]any }
 					unmarshal(&s, `{}`)
 					Expect(s.I).To(BeNil())
 					Expect(s.I).To(BeEmpty())
 				})
 
 				By("pointer", func() {
-					var s struct{ I *map[string]interface{} }
+					var s struct{ I *map[string]any }
 					unmarshal(&s, `{}`)
 					Expect(s.I).To(BeNil())
 				})
@@ -371,14 +371,14 @@ var _ = Describe("Unmarshal", func() {
 
 			It("unmarshals null maps", func() {
 				By("map", func() {
-					var s struct{ I map[string]interface{} }
+					var s struct{ I map[string]any }
 					unmarshal(&s, `{"I": null}`)
 					Expect(s.I).To(BeNil())
 					Expect(s.I).To(BeEmpty())
 				})
 
 				By("pointer", func() {
-					var s struct{ I *map[string]interface{} }
+					var s struct{ I *map[string]any }
 					unmarshal(&s, `{"I": null}`)
 					Expect(s.I).To(BeNil())
 				})
@@ -386,14 +386,14 @@ var _ = Describe("Unmarshal", func() {
 
 			It("unmarshals empty maps", func() {
 				By("map", func() {
-					var s struct{ I map[string]interface{} }
+					var s struct{ I map[string]any }
 					unmarshal(&s, `{"I": {}}`)
 					Expect(s.I).NotTo(BeNil())
 					Expect(s.I).To(BeEmpty())
 				})
 
 				By("pointer", func() {
-					var s struct{ I *map[string]interface{} }
+					var s struct{ I *map[string]any }
 					unmarshal(&s, `{"I": {}}`)
 					Expect(s.I).NotTo(BeNil())
 					Expect(s.I).To(PointTo(Not(BeNil())))
@@ -481,7 +481,7 @@ var _ = Describe("Unmarshal", func() {
 			})
 
 			It("overwrites an interface{} as nil", func() {
-				s := struct{ S interface{} }{S: "hello"}
+				s := struct{ S any }{S: "hello"}
 				unmarshal(&s, `{"S": null}`)
 				Expect(s.S).To(BeNil())
 			})
