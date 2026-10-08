@@ -21,7 +21,7 @@ import (
 // to determine whether or not to marshal the field, overriding any `,omitempty` tags.
 //
 // The field type can be string, bool, int*, uint*, float*, map, slice, array or struct. JSONry is recursive.
-func Marshal(in interface{}) ([]byte, error) {
+func Marshal(in any) ([]byte, error) {
 	iv := reflect.Indirect(reflect.ValueOf(in))
 
 	if iv.Kind() != reflect.Struct {
@@ -36,7 +36,7 @@ func Marshal(in interface{}) ([]byte, error) {
 	return json.Marshal(m)
 }
 
-func marshalStruct(in reflect.Value) (map[string]interface{}, error) {
+func marshalStruct(in reflect.Value) (map[string]any, error) {
 	out := make(tree.Tree)
 	t := in.Type()
 
@@ -61,7 +61,7 @@ func marshalStruct(in reflect.Value) (map[string]interface{}, error) {
 	return out, nil
 }
 
-func marshal(in reflect.Value) (r interface{}, err error) {
+func marshal(in reflect.Value) (r any, err error) {
 	input := reflect.Indirect(in)
 	kind := input.Kind()
 
@@ -87,12 +87,12 @@ func marshal(in reflect.Value) (r interface{}, err error) {
 	return
 }
 
-func marshalList(in reflect.Value) (out []interface{}, err error) {
+func marshalList(in reflect.Value) (out []any, err error) {
 	if in.Type().Kind() == reflect.Slice && in.IsNil() {
 		return out, nil
 	}
 
-	out = make([]interface{}, in.Len())
+	out = make([]any, in.Len())
 	for i := 0; i < in.Len(); i++ {
 		r, err := marshal(in.Index(i))
 		if err != nil {
@@ -104,12 +104,12 @@ func marshalList(in reflect.Value) (out []interface{}, err error) {
 	return out, nil
 }
 
-func marshalMap(in reflect.Value) (out map[string]interface{}, err error) {
+func marshalMap(in reflect.Value) (out map[string]any, err error) {
 	if in.IsNil() {
 		return out, nil
 	}
 
-	out = make(map[string]interface{})
+	out = make(map[string]any)
 	iter := in.MapRange()
 	for iter.Next() {
 		k := iter.Key()
@@ -127,7 +127,7 @@ func marshalMap(in reflect.Value) (out map[string]interface{}, err error) {
 	return out, nil
 }
 
-func marshalJSONMarshaler(in reflect.Value) (interface{}, error) {
+func marshalJSONMarshaler(in reflect.Value) (any, error) {
 	const method = "MarshalJSON"
 	t := in.MethodByName(method).Call(nil)
 
@@ -135,7 +135,7 @@ func marshalJSONMarshaler(in reflect.Value) (interface{}, error) {
 		return nil, newForeignError(fmt.Sprintf("error from %s() call", method), err)
 	}
 
-	var r interface{}
+	var r any
 	err := json.Unmarshal(t[0].Bytes(), &r)
 	if err != nil {
 		return nil, newForeignError(fmt.Sprintf(`error parsing %s() output "%s"`, method, t[0].Bytes()), err)

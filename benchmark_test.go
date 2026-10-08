@@ -10,9 +10,9 @@ import (
 )
 
 type container struct {
-	A []int       `jsonry:"a"`
-	C interface{} `jsonry:"b.c"`
-	D string      `jsonry:"b.d"`
+	A []int  `jsonry:"a"`
+	C any    `jsonry:"b.c"`
+	D string `jsonry:"b.d"`
 }
 
 const marshaled = `{"a":[1,2,3],"b":{"c":null,"d":"hello"}}`
@@ -48,8 +48,8 @@ func BenchmarkUnmarshal(b *testing.B) {
 			var receiver struct {
 				A []int `json:"a"`
 				B struct {
-					C interface{} `json:"c"`
-					D string      `json:"d"`
+					C any    `json:"c"`
+					D string `json:"d"`
 				} `json:"b"`
 			}
 			json.Unmarshal([]byte(marshaled), &receiver)
@@ -92,8 +92,8 @@ func BenchmarkMarshal(b *testing.B) {
 			var transmitter struct {
 				A []int `json:"a"`
 				B struct {
-					C interface{} `json:"c"`
-					D string      `json:"d"`
+					C any    `json:"c"`
+					D string `json:"d"`
 				} `json:"b"`
 			}
 			transmitter.A = u.A

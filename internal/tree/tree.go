@@ -7,9 +7,9 @@ import (
 	"code.cloudfoundry.org/jsonry/internal/path"
 )
 
-type Tree map[string]interface{}
+type Tree map[string]any
 
-func (t Tree) Attach(p path.Path, v interface{}) Tree {
+func (t Tree) Attach(p path.Path, v any) Tree {
 	switch p.Len() {
 	case 0:
 		panic("empty path")
@@ -31,7 +31,7 @@ func (t Tree) Attach(p path.Path, v interface{}) Tree {
 	return t
 }
 
-func (t Tree) Fetch(p path.Path) (interface{}, bool) {
+func (t Tree) Fetch(p path.Path) (any, bool) {
 	switch p.Len() {
 	case 0:
 		panic("empty path")
@@ -47,9 +47,9 @@ func (t Tree) Fetch(p path.Path) (interface{}, bool) {
 		}
 
 		switch vt := v.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			return Tree(vt).Fetch(stem)
-		case []interface{}:
+		case []any:
 			return unspread(vt, stem), true
 		default:
 			return nil, false
@@ -57,31 +57,31 @@ func (t Tree) Fetch(p path.Path) (interface{}, bool) {
 	}
 }
 
-func spread(p path.Path, v interface{}) []interface{} {
+func spread(p path.Path, v any) []any {
 	vv := reflect.ValueOf(v)
 	if vv.Kind() != reflect.Array && vv.Kind() != reflect.Slice {
-		v = []interface{}{v}
+		v = []any{v}
 		vv = reflect.ValueOf(v)
 	}
 
-	var s []interface{}
+	var s []any
 	for i := 0; i < vv.Len(); i++ {
 		s = append(s, make(Tree).Attach(p, vv.Index(i).Interface()))
 	}
 	return s
 }
 
-func unspread(v []interface{}, stem path.Path) []interface{} {
-	l := make([]interface{}, 0, len(v))
+func unspread(v []any, stem path.Path) []any {
+	l := make([]any, 0, len(v))
 	for i := range v {
 		switch vt := v[i].(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			if r, ok := Tree(vt).Fetch(stem); ok {
 				l = append(l, r)
 			} else {
 				l = append(l, nil)
 			}
-		case []interface{}:
+		case []any:
 			l = append(l, unspread(vt, stem)...)
 		default:
 			l = append(l, v[i])
